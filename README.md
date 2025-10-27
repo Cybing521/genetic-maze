@@ -4,7 +4,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-v1.5.1-orange.svg)](#版本历史)
+[![Version](https://img.shields.io/badge/Version-v1.6.0-orange.svg)](#版本历史)
 
 ---
 
@@ -875,10 +875,23 @@ class MultiTargetMaze(Maze):
 
 ---
 
+## 🌐 Web版本
+
+现在提供了功能完整的Web应用版本！
+
+📂 **位置**: `../maze-ga-web/`  
+🚀 **运行**: `cd ../maze-ga-web && npm install && npm run dev`  
+✨ **特性**: 60 FPS Canvas动画、实时参数调整、WebM录制
+
+详见：[Web App README](../maze-ga-web/README.md)
+
+---
+
 ## 版本历史
 
 查看详细的更新内容请使用：`git log`
 
+- **v1.6.0** (2025-10-27) - 创建完整Web版本（TypeScript + Vite）+ 工具脚本
 - **v1.5.1** (2025-10-27) - Bug修复和UI改进
 - **v1.5.0** (2025-10-27) - 高级算法：自适应参数、岛屿模型、混合A*、路径平滑优化
 - **v1.4.0** (2025-10-27) - 种群演化动画
@@ -921,7 +934,7 @@ MIT License - 详见LICENSE文件
 ## 联系方式
 
 - **项目**: Maze GA Project
-- **当前版本**: v1.5.1
+- **当前版本**: v1.6.0
 - **最后更新**: 2025-10-27
 
 ---
