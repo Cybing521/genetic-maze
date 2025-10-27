@@ -27,7 +27,7 @@ export class Maze {
     return maze;
   }
 
-  generate(complexity: number = 0.75, density: number = 0.75, seed?: number): void {
+  generate(complexity: number = 0.85, density: number = 0.85, seed?: number): void {
     // 初始化
     this.grid = Array(this.height).fill(0).map(() => Array(this.width).fill(0));
     

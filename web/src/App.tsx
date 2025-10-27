@@ -81,9 +81,9 @@ function App() {
       }
     }, 100);
 
-    // 生成默认迷宫
+    // 生成默认迷宫（增加难度）
     const maze = new Maze(mazeSize, mazeSize);
-    maze.generate();
+    maze.generate(0.85, 0.85);  // 更高的复杂度和密度
     mazeRef.current = maze;
     renderer.setMaze(maze);
     renderer.clear();
@@ -149,7 +149,7 @@ function App() {
       const chartCanvas = chartCanvasRef.current;
       
       const maze = new Maze(mazeSize, mazeSize);  // 使用状态中的mazeSize
-      maze.generate();
+      maze.generate(0.85, 0.85);  // 更高的复杂度和密度
       mazeRef.current = maze;
       
       const ctx = canvas.getContext('2d')!;
@@ -456,9 +456,9 @@ function App() {
             <label>Max Generations: {config.maxGenerations}</label>
             <input
               type="range"
-              min="100"
+              min="5"
               max="2000"
-              step="100"
+              step="10"
               value={config.maxGenerations}
               onChange={(e) => setConfig({...config, maxGenerations: parseInt(e.target.value)})}
               disabled={isRunning}
