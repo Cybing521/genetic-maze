@@ -57,7 +57,7 @@ def main():
     # 保存到Web项目
     output_dir = os.path.join(
         os.path.dirname(__file__), 
-        '../../maze-ga-web/public/mazes'
+        '../web/public/mazes'
     )
     os.makedirs(output_dir, exist_ok=True)
     

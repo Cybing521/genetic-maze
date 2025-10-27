@@ -64,3 +64,8 @@ output/
 # 内部文档（不提交到git）
 docs/
 
+# Web项目依赖和构建产物
+web/node_modules/
+web/dist/
+web/.vite/
+

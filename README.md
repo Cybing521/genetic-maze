@@ -4,7 +4,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-v1.6.0-orange.svg)](#版本历史)
+[![Version](https://img.shields.io/badge/Version-v2.0.0-orange.svg)](#版本历史)
 
 ---
 
@@ -55,11 +55,25 @@ program2/
 ├── .gitignore          # Git忽略配置
 ├── .cursorrules        # Cursor规则配置
 ├── venv/               # 虚拟环境（本地）
-└── src/                # 源代码目录
-    ├── __init__.py
-    ├── maze.py         # 迷宫类和生成器
-    ├── genetic_algorithm.py # 遗传算法核心
-    └── visualizer.py   # 可视化模块
+├── src/                # Python源代码
+│   ├── __init__.py
+│   ├── maze.py         # 迷宫类和生成器
+│   ├── genetic_algorithm.py # 遗传算法核心
+│   ├── visualizer.py   # 可视化模块
+│   ├── adaptive_ga.py  # 自适应GA
+│   ├── island_ga.py    # 岛屿模型
+│   └── hybrid_ga.py    # 混合A*
+├── tools/              # 工具脚本
+│   └── generate_web_mazes.py # 生成Web迷宫数据
+└── web/                # Web版本 ✨ 新增
+    ├── src/            # TypeScript源代码
+    │   ├── ga/         # GA算法
+    │   ├── maze/       # 迷宫模块
+    │   ├── vis/        # Canvas渲染
+    │   ├── utils/      # 工具函数
+    │   └── App.tsx     # 主应用
+    ├── public/mazes/   # 迷宫数据
+    └── package.json
 ```
 
 ---
@@ -879,11 +893,11 @@ class MultiTargetMaze(Maze):
 
 现在提供了功能完整的Web应用版本！
 
-📂 **位置**: `../maze-ga-web/`  
-🚀 **运行**: `cd ../maze-ga-web && npm install && npm run dev`  
+📂 **位置**: `web/`  
+🚀 **运行**: `cd web && npm install && npm run dev`  
 ✨ **特性**: 60 FPS Canvas动画、实时参数调整、WebM录制
 
-详见：[Web App README](../maze-ga-web/README.md)
+详见：[Web App README](web/README.md)
 
 ---
 
@@ -891,6 +905,7 @@ class MultiTargetMaze(Maze):
 
 查看详细的更新内容请使用：`git log`
 
+- **v2.0.0** (2025-10-27) - Web版本集成到统一仓库
 - **v1.6.0** (2025-10-27) - 创建完整Web版本（TypeScript + Vite）+ 工具脚本
 - **v1.5.1** (2025-10-27) - Bug修复和UI改进
 - **v1.5.0** (2025-10-27) - 高级算法：自适应参数、岛屿模型、混合A*、路径平滑优化
@@ -934,7 +949,7 @@ MIT License - 详见LICENSE文件
 ## 联系方式
 
 - **项目**: Maze GA Project
-- **当前版本**: v1.6.0
+- **当前版本**: v2.0.0 (Python) / v1.0.0 (Web)
 - **最后更新**: 2025-10-27
 
 ---
