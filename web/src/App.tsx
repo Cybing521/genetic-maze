@@ -14,13 +14,13 @@ function App() {
   const chartCanvasRef = useRef<HTMLCanvasElement>(null);
   
   const [config, setConfig] = useState<GAConfig>({
-    populationSize: 100,
+    populationSize: 300,
     maxGenerations: 500,
-    mutationRate: 0.15,
-    crossoverRate: 0.7,
-    elitismCount: 2,
+    mutationRate: 0.02,
+    crossoverRate: 0.8,
+    elitismCount: 15,  // 5% of 300
     maxSteps: 200,
-    useAdaptive: false,
+    useAdaptive: true,
     adaptiveMode: 'hybrid'
   });
 
@@ -29,10 +29,12 @@ function App() {
   const [isPaused, setIsPaused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [currentGen, setCurrentGen] = useState<GenerationResult | null>(null);
+  const [fps, setFps] = useState<number>(60);
 
   const mazeRef = useRef<Maze | null>(null);
   const animManagerRef = useRef<AnimationManager | null>(null);
   const recorderRef = useRef<WebMRecorder>(new WebMRecorder());
+  const fpsIntervalRef = useRef<number | null>(null);
 
   // 初始化
   useEffect(() => {
@@ -41,11 +43,11 @@ function App() {
     const canvas = canvasRef.current;
     const chartCanvas = chartCanvasRef.current;
     
-    // 设置Canvas尺寸
-    canvas.width = window.innerWidth * 0.7;
-    canvas.height = window.innerHeight - 100;
-    chartCanvas.width = window.innerWidth * 0.7;
-    chartCanvas.height = 150;
+    // 设置Canvas尺寸 - 基于用户规格
+    canvas.width = Math.min(800, window.innerWidth * 0.7);
+    canvas.height = Math.min(600, window.innerHeight - 200);
+    chartCanvas.width = Math.min(800, window.innerWidth * 0.7);
+    chartCanvas.height = 120;
 
     const ctx = canvas.getContext('2d')!;
     const chartCtx = chartCanvas.getContext('2d')!;
@@ -58,9 +60,22 @@ function App() {
     const animManager = new AnimationManager(
       renderer,
       fitnessChart,
-      (result) => setCurrentGen(result)
+      (result) => {
+        setCurrentGen(result);
+        // 更新FPS显示
+        if (animManager.fps) {
+          setFps(animManager.fps);
+        }
+      }
     );
     animManagerRef.current = animManager;
+    
+    // FPS更新循环
+    fpsIntervalRef.current = window.setInterval(() => {
+      if (animManager && animManager.isRunning) {
+        setFps(animManager.fps);
+      }
+    }, 100);
 
     // 生成默认迷宫
     const maze = new Maze(mazeSize, mazeSize);
@@ -136,15 +151,46 @@ function App() {
     <div className="app">
       {/* HUD */}
       <div className="hud">
-        <h1>Genetic Algorithm Maze Solver</h1>
-        {currentGen && (
-          <div className="hud-stats">
-            <span>Gen: {currentGen.generation}</span>
-            <span>Best Fitness: {currentGen.bestFitness.toFixed(1)}</span>
-            <span>Steps: {currentGen.best.path.length}</span>
-            <span>Status: {currentGen.best.reachedEnd ? '✓ SUCCESS' : '⚡ EVOLVING'}</span>
+        <div className="hud-left">
+          <h1>Genetic Algorithm Maze Solver</h1>
+          {currentGen && (
+            <div className="hud-stats">
+              <div className="stat">
+                <span className="label">Generation</span>
+                <span className="value">{currentGen.generation}</span>
+              </div>
+              <div className="stat">
+                <span className="label">Best Fitness</span>
+                <span className="value">{currentGen.bestFitness.toFixed(1)}</span>
+              </div>
+              <div className="stat">
+                <span className="label">Avg Fitness</span>
+                <span className="value">{currentGen.avgFitness.toFixed(1)}</span>
+              </div>
+              <div className="stat">
+                <span className="label">Diversity</span>
+                <span className="value">{currentGen.diversity.toFixed(1)}</span>
+              </div>
+              <div className="stat">
+                <span className="label">Steps</span>
+                <span className="value">{currentGen.best.path.length}</span>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="hud-right">
+          <div className="fps-display">
+            <span className="label">FPS</span>
+            <span className="value" style={{color: fps >= 58 ? '#A3BE8C' : fps >= 50 ? '#EBCB8B' : '#BF616A'}}>
+              {fps}
+            </span>
           </div>
-        )}
+          {currentGen && (
+            <div className="status">
+              {currentGen.best.reachedEnd ? '✓ SUCCESS' : '⚡ EVOLVING'}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="main-content">
@@ -185,12 +231,12 @@ function App() {
           </div>
 
           <div className="control-group">
-            <label>Mutation Rate: {config.mutationRate.toFixed(2)}</label>
+            <label>Mutation Rate: {(config.mutationRate * 100).toFixed(0)}%</label>
             <input
               type="range"
-              min="0.05"
-              max="0.5"
-              step="0.05"
+              min="0.01"
+              max="0.2"
+              step="0.01"
               value={config.mutationRate}
               onChange={(e) => setConfig({...config, mutationRate: parseFloat(e.target.value)})}
               disabled={isRunning}
@@ -198,14 +244,27 @@ function App() {
           </div>
 
           <div className="control-group">
-            <label>Crossover Rate: {config.crossoverRate.toFixed(2)}</label>
+            <label>Crossover Rate: {(config.crossoverRate * 100).toFixed(0)}%</label>
             <input
               type="range"
               min="0.5"
-              max="0.9"
-              step="0.1"
+              max="0.95"
+              step="0.05"
               value={config.crossoverRate}
               onChange={(e) => setConfig({...config, crossoverRate: parseFloat(e.target.value)})}
+              disabled={isRunning}
+            />
+          </div>
+          
+          <div className="control-group">
+            <label>Elite Rate: {((config.elitismCount / config.populationSize) * 100).toFixed(0)}%</label>
+            <input
+              type="range"
+              min="1"
+              max="20"
+              step="1"
+              value={config.elitismCount}
+              onChange={(e) => setConfig({...config, elitismCount: parseInt(e.target.value)})}
               disabled={isRunning}
             />
           </div>

@@ -16,6 +16,16 @@ export class AnimationManager {
   previousGeneration: GenerationResult | null = null;
   currentGeneration: GenerationResult | null = null;
   transitionProgress: number = 1;  // 0-1，1表示完成过渡
+  
+  // 轨迹淡出
+  pathTrails: Array<{ path: Position[]; alpha: number; generation: number }> = [];
+  maxTrails: number = 5;
+  trailFadeDuration: number = 60;  // 帧数
+  
+  // FPS统计
+  fps: number = 60;
+  frameCount: number = 0;
+  lastFpsUpdate: number = 0;
 
   renderer: MazeRenderer;
   fitnessChart: FitnessChart;
@@ -43,6 +53,14 @@ export class AnimationManager {
 
     const currentTime = performance.now();
     const deltaTime = currentTime - this.lastFrameTime;
+    
+    // 更新FPS
+    this.frameCount++;
+    if (currentTime - this.lastFpsUpdate >= 1000) {
+      this.fps = this.frameCount;
+      this.frameCount = 0;
+      this.lastFpsUpdate = currentTime;
+    }
 
     // 如果还在过渡中，继续渲染过渡动画
     if (this.transitionProgress < 1) {
@@ -92,13 +110,16 @@ export class AnimationManager {
       // 绘制迷宫
       this.renderer.renderMaze();
       
+      // 绘制历史轨迹（淡出效果）
+      this.renderTrails();
+      
       // 插值渲染路径
       const prevPaths = this.previousGeneration.population.map(ind => ind.path);
       const currPaths = this.currentGeneration.population.map(ind => ind.path);
       
       // 渲染种群路径（渐变消失旧的，渐入新的）
-      this.renderer.renderPaths(prevPaths, 0.3 * (1 - t));
-      this.renderer.renderPaths(currPaths, 0.3 * t);
+      this.renderer.renderPaths(prevPaths, 0.18 * (1 - t));
+      this.renderer.renderPaths(currPaths, 0.18 * t);
       
       // 最佳路径使用插值
       const prevBest = this.previousGeneration.best.path;
@@ -106,6 +127,11 @@ export class AnimationManager {
       const interpolatedPath = this.interpolatePaths(prevBest, currBest, t);
       
       this.renderer.renderBestPath(interpolatedPath, true);
+      
+      // 添加当前最佳路径到轨迹
+      if (t === 1 || this.transitionProgress >= 0.99) {
+        this.addTrail(currBest, this.currentGeneration.generation);
+      }
       
       // 绘制起终点
       const maze = this.renderer.maze;
@@ -123,6 +149,54 @@ export class AnimationManager {
     } else if (this.currentGeneration) {
       this.render(this.currentGeneration);
     }
+  }
+  
+  private addTrail(path: Position[], generation: number): void {
+    this.pathTrails.push({
+      path: [...path],
+      alpha: 1.0,
+      generation
+    });
+    
+    // 限制轨迹数量
+    if (this.pathTrails.length > this.maxTrails) {
+      this.pathTrails.shift();
+    }
+  }
+  
+  private renderTrails(): void {
+    // 更新并渲染淡出的轨迹
+    this.pathTrails.forEach((trail) => {
+      trail.alpha = Math.max(0, trail.alpha - 1 / this.trailFadeDuration);
+    });
+    
+    // 移除完全透明的轨迹
+    this.pathTrails = this.pathTrails.filter(t => t.alpha > 0.01);
+    
+    // 渲染轨迹
+    const offset = this.renderer.getOffset();
+    this.renderer.ctx.save();
+    this.renderer.ctx.globalCompositeOperation = 'lighter';
+    
+    this.pathTrails.forEach((trail) => {
+      if (trail.path.length < 2) return;
+      
+      this.renderer.ctx.strokeStyle = `rgba(0, 255, 255, ${trail.alpha * 0.3})`;
+      this.renderer.ctx.lineWidth = 1.5;
+      this.renderer.ctx.lineCap = 'round';
+      this.renderer.ctx.lineJoin = 'round';
+      
+      this.renderer.ctx.beginPath();
+      trail.path.forEach((pos, i) => {
+        const x = offset.x + (pos[1] + 0.5) * this.renderer.cellSize;
+        const y = offset.y + (pos[0] + 0.5) * this.renderer.cellSize;
+        if (i === 0) this.renderer.ctx.moveTo(x, y);
+        else this.renderer.ctx.lineTo(x, y);
+      });
+      this.renderer.ctx.stroke();
+    });
+    
+    this.renderer.ctx.restore();
   }
   
   private interpolatePaths(path1: Position[], path2: Position[], t: number): Position[] {

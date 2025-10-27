@@ -4,7 +4,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-v2.0.1-orange.svg)](#版本历史)
+[![Version](https://img.shields.io/badge/Version-v2.0.2-orange.svg)](#版本历史)
 
 ---
 
@@ -905,6 +905,7 @@ class MultiTargetMaze(Maze):
 
 查看详细的更新内容请使用：`git log`
 
+- **v2.0.2** (2025-10-27) - Web视觉全面升级：新配色+轨迹淡出+FPS显示
 - **v2.0.1** (2025-10-27) - Web动画优化：修复错位+平滑过渡
 - **v2.0.0** (2025-10-27) - Web版本集成到统一仓库
 - **v1.6.0** (2025-10-27) - 创建完整Web版本（TypeScript + Vite）+ 工具脚本
@@ -950,7 +951,7 @@ MIT License - 详见LICENSE文件
 ## 联系方式
 
 - **项目**: Maze GA Project
-- **当前版本**: v2.0.1 (Python) / v1.1.0 (Web)
+- **当前版本**: v2.0.2 (Python) / v1.2.0 (Web)
 - **最后更新**: 2025-10-27
 
 ---

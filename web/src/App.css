@@ -1,9 +1,9 @@
-/* 主应用样式 - Nord深色主题 */
+/* 主应用样式 - 用户指定配色 */
 :root {
-  --nord0: #2E3440;
-  --nord1: #3B4252;
-  --nord2: #434C5E;
-  --nord3: #4C566A;
+  --nord0: #0f1115;
+  --nord1: #1c1f26;
+  --nord2: #252930;
+  --nord3: #2f3338;
   --nord4: #D8DEE9;
   --nord5: #E5E9F0;
   --nord6: #ECEFF4;
@@ -41,33 +41,95 @@ body {
 /* HUD */
 .hud {
   background: var(--nord1);
-  padding: 15px 30px;
+  padding: 12px 25px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
   z-index: 10;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+}
+
+.hud-left {
+  display: flex;
+  align-items: center;
+  gap: 30px;
 }
 
 .hud h1 {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
-  color: var(--nord8);
-  letter-spacing: -0.5px;
+  color: rgba(0, 255, 255, 0.9);
+  letter-spacing: -0.3px;
 }
 
 .hud-stats {
   display: flex;
-  gap: 25px;
-  font-size: 14px;
+  gap: 15px;
+  font-size: 12px;
   font-family: 'SF Mono', Monaco, Consolas, monospace;
 }
 
-.hud-stats span {
-  padding: 6px 12px;
-  background: var(--nord0);
-  border-radius: 6px;
-  border: 1px solid var(--nord3);
+.hud-stats .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hud-stats .label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hud-stats .value {
+  font-size: 14px;
+  color: rgba(0, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+.hud-right {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.fps-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fps-display .label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.fps-display .value {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.status {
+  padding: 6px 15px;
+  background: rgba(163, 190, 140, 0.2);
+  border: 1px solid rgba(163, 190, 140, 0.4);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #A3BE8C;
 }
 
 /* 主内容区 */

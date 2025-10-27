@@ -9,15 +9,17 @@ export class MazeRenderer {
   mazeCache: ImageData | null = null;
   maze: Maze | null = null;
 
-  // Nord主题配色
+  // 配色方案 - 基于用户规格
   private readonly COLORS = {
-    background: '#2E3440',
-    wall: '#4C566A',
-    path: '#ECEFF4',
+    background: '#0f1115',
+    wall: '#1c1f26',
+    path: 'rgba(255, 255, 255, 0.18)',
     start: '#A3BE8C',
     end: '#BF616A',
-    pathGlow: '#88C0D0',
-    grid: '#3B4252'
+    pathGlow: 'rgba(0, 255, 255, 1.0)',
+    pathGlowColor: 'rgba(0, 255, 255, 0.8)',
+    grid: 'rgba(255, 255, 255, 0.15)',
+    populationPath: 'rgba(255, 255, 255, 0.18)'
   };
 
   canvas: HTMLCanvasElement;
@@ -74,15 +76,14 @@ export class MazeRenderer {
     // 绘制迷宫
     for (let y = 0; y < maze.height; y++) {
       for (let x = 0; x < maze.width; x++) {
-        ctx.fillStyle = maze.grid[y][x] === 1 ? this.COLORS.wall : this.COLORS.path;
+        // 墙壁或通路
+        ctx.fillStyle = maze.grid[y][x] === 1 ? this.COLORS.wall : this.COLORS.background;
         ctx.fillRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
         
-        // 网格线
-        if (maze.grid[y][x] === 0) {
-          ctx.strokeStyle = this.COLORS.grid;
-          ctx.lineWidth = 0.5;
-          ctx.strokeRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
-        }
+        // 网格线（所有格子）
+        ctx.strokeStyle = this.COLORS.grid;
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
       }
     }
   }
@@ -143,19 +144,19 @@ export class MazeRenderer {
     this.ctx.restore();
   }
 
-  renderPaths(paths: Position[][], alpha: number = 0.4): void {
+  renderPaths(paths: Position[][], alpha: number = 0.18): void {
     const offset = this.getOffset();
     
     this.ctx.save();
     this.ctx.globalAlpha = alpha;
     this.ctx.globalCompositeOperation = 'lighter';
 
-    paths.forEach((path, idx) => {
+    paths.forEach((path) => {
       if (path.length < 2) return;
       
-      const hue = (idx * 40) % 360;
-      this.ctx.strokeStyle = `hsl(${hue}, 70%, 60%)`;
-      this.ctx.lineWidth = 2;
+      // 使用白色半透明
+      this.ctx.strokeStyle = this.COLORS.populationPath;
+      this.ctx.lineWidth = 1.5;
       this.ctx.lineCap = 'round';
       this.ctx.lineJoin = 'round';
 
@@ -180,43 +181,38 @@ export class MazeRenderer {
     this.ctx.save();
     this.ctx.globalCompositeOperation = 'lighter';
     
-    // 绘制发光路径
-    for (let i = 0; i < path.length - 1; i++) {
-      const t = i / (path.length - 1);
-      const color = this.interpolatePathColor(t);
-      
-      const x1 = offset.x + (path[i][1] + 0.5) * this.cellSize;
-      const y1 = offset.y + (path[i][0] + 0.5) * this.cellSize;
-      const x2 = offset.x + (path[i + 1][1] + 0.5) * this.cellSize;
-      const y2 = offset.y + (path[i + 1][0] + 0.5) * this.cellSize;
+    // 绘制发光路径 - 使用青色(Cyan)
+    this.ctx.beginPath();
+    path.forEach((pos, i) => {
+      const x = offset.x + (pos[1] + 0.5) * this.cellSize;
+      const y = offset.y + (pos[0] + 0.5) * this.cellSize;
+      if (i === 0) this.ctx.moveTo(x, y);
+      else this.ctx.lineTo(x, y);
+    });
 
-      // 外层光晕
-      this.ctx.strokeStyle = color;
-      this.ctx.shadowBlur = 20;
-      this.ctx.shadowColor = color;
-      this.ctx.lineWidth = 4;
-      this.ctx.lineCap = 'round';
-      
-      this.ctx.beginPath();
-      this.ctx.moveTo(x1, y1);
-      this.ctx.lineTo(x2, y2);
-      this.ctx.stroke();
+    // 外层光晕（8px）
+    this.ctx.strokeStyle = this.COLORS.pathGlowColor;
+    this.ctx.shadowBlur = 8;
+    this.ctx.shadowColor = this.COLORS.pathGlowColor;
+    this.ctx.lineWidth = 4;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    this.ctx.stroke();
 
-      // 内层亮线
-      this.ctx.shadowBlur = 5;
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeStyle = '#FFFFFF';
-      this.ctx.stroke();
-    }
+    // 中层青色线
+    this.ctx.shadowBlur = 4;
+    this.ctx.strokeStyle = this.COLORS.pathGlow;
+    this.ctx.lineWidth = 2.5;
+    this.ctx.stroke();
+
+    // 内层亮白线
+    this.ctx.shadowBlur = 0;
+    this.ctx.strokeStyle = '#FFFFFF';
+    this.ctx.lineWidth = 1;
+    this.ctx.stroke();
 
     this.ctx.restore();
   }
 
-  private interpolatePathColor(t: number): string {
-    const r = Math.round(136 + (191 - 136) * t);
-    const g = Math.round(192 + (97 - 192) * t);
-    const b = Math.round(208 + (106 - 208) * t);
-    return `rgb(${r}, ${g}, ${b})`;
-  }
 }
 
