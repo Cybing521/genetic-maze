@@ -10,7 +10,12 @@
 
 - 🧬 **遗传算法实现**: 完整的遗传算法框架（选择、交叉、变异）
 - 🗺️ **迷宫生成**: 自动生成随机迷宫
-- 📊 **可视化**: 迷宫、路径和适应度演化的可视化
+- 📊 **可视化优化**: 迷宫、路径和适应度演化的可视化
+  - ✨ 自动配置中文字体（跨平台）
+  - 📏 动态调整图像大小
+  - 🎨 Nord主题深色UI
+  - 📈 完整的迭代过程仪表盘
+  - 🌈 渐变色路径显示
 - 🔧 **多种模式**: 基础示例、测试、对比、自定义
 - 📈 **性能分析**: 参数对比实验功能
 
@@ -157,31 +162,69 @@ python main.py --mode custom \
 - 🤖 **应用**: 路径规划、游戏AI
 - 📚 **学习**: Python编程实践
 
+## 可视化功能 (v1.1.0 新增)
+
+### 进化过程仪表盘
+
+运行程序后会显示一个综合仪表盘，包含：
+
+1. **迷宫和最佳路径** (左侧)
+   - 渐变色显示路径进度
+   - 起点/终点醒目标记
+
+2. **适应度演化曲线** (右上)
+   - 最佳适应度和平均适应度对比
+   - 填充区域显示差异
+
+3. **统计信息面板** (右中)
+   - 代数、适应度、路径长度
+   - 成功率和唯一步数
+
+4. **收敛分析** (右下)
+   - 标注关键改进点
+   - 分析收敛速度
+
+详细说明请查看 `docs/VISUALIZATION_GUIDE.md`
+
+---
+
 ## 常见问题
 
-### Q1: 算法无法找到解决方案？
+### Q1: 中文显示为方块？
+
+**已解决！** v1.1.0 自动配置中文字体：
+- macOS: Arial Unicode MS
+- Windows: Microsoft YaHei  
+- Linux: Droid Sans Fallback
+
+失败时自动使用英文标签。
+
+### Q2: 图像太大？
+
+**已优化！** 根据迷宫尺寸自动调整：
+- 小迷宫(≤15): 6×6英寸
+- 中等(≤25): 8×8英寸
+- 大型(>25): 10×10英寸
+
+### Q3: 算法无法找到解决方案？
 
 增加种群大小和代数：
 ```bash
 python main.py --mode custom --population 200 --generations 1000
 ```
 
-### Q2: 可视化无法显示？
+### Q4: 可视化无法显示？
 
-确保安装了matplotlib并支持图形显示。无图形环境下可以保存图片：
+无图形环境下保存图片：
 ```python
-# 修改src/visualizer.py，添加save_path参数
-visualizer.plot_maze(path, save_path='result.png')
+viz.plot_evolution_dashboard(
+    fitness_history=ga.fitness_history,
+    best_individual=best,
+    save_path='result.png'  # 保存图片
+)
 ```
 
-### Q3: 如何提高路径质量？
-
-- 增加运行时间（更多代数）
-- 增大种群规模
-- 调整适应度函数权重
-- 降低变异率保持优良基因
-
-### Q4: 在虚拟环境中运行？
+### Q5: 在虚拟环境中运行？
 
 ```bash
 # 确保激活虚拟环境
@@ -223,6 +266,7 @@ python main.py
 
 - **快速入门**: `docs/QUICKSTART.md`
 - **安装指南**: `docs/INSTALL.md`
+- **可视化指南**: `docs/VISUALIZATION_GUIDE.md` ⭐ 新增
 - **技术总结**: `docs/PROJECT_SUMMARY.md`
 - **完成报告**: `docs/PROJECT_COMPLETION.md`
 
