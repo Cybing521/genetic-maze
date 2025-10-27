@@ -52,12 +52,16 @@ def run_basic():
     visualizer = MazeVisualizer(maze)
     
     try:
-        title = f"遗传算法求解迷宫\n适应度: {best.fitness:.2f} | 路径长度: {len(best.path)}"
-        visualizer.plot_maze(best.path, title=title)
-        visualizer.plot_fitness_history(ga.fitness_history)
+        # 使用新的仪表盘展示完整迭代过程
+        visualizer.plot_evolution_dashboard(
+            fitness_history=ga.fitness_history,
+            best_individual=best
+        )
         print("✓ 可视化完成！")
     except Exception as e:
         print(f"⚠ 可视化错误: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 def run_test():
@@ -90,7 +94,12 @@ def run_test():
     # 可视化
     try:
         visualizer = MazeVisualizer(maze)
-        visualizer.plot_maze(best.path, title="测试结果")
+        visualizer.plot_maze_compact(
+            path=best.path,
+            title="Test Result",
+            generation=ga.generation,
+            fitness=best.fitness
+        )
     except Exception as e:
         print(f"⚠ 可视化跳过: {e}")
 
@@ -141,6 +150,8 @@ def run_comparison():
         print("✓ 对比完成！")
     except Exception as e:
         print(f"⚠ 可视化错误: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 def run_custom(args):
@@ -181,12 +192,16 @@ def run_custom(args):
     print("\n生成可视化...")
     try:
         visualizer = MazeVisualizer(maze)
-        title = f"自定义配置结果\n适应度: {best.fitness:.2f}"
-        visualizer.plot_maze(best.path, title=title)
-        visualizer.plot_fitness_history(ga.fitness_history)
+        # 使用仪表盘展示完整结果
+        visualizer.plot_evolution_dashboard(
+            fitness_history=ga.fitness_history,
+            best_individual=best
+        )
         print("✓ 完成！")
     except Exception as e:
         print(f"⚠ 可视化错误: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 def main():
