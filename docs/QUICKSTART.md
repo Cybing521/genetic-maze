@@ -2,23 +2,23 @@
 
 ## 5分钟上手遗传算法迷宫求解
 
-### 第一步：安装依赖
+### 第一步：准备环境
 
 ```bash
-pip install numpy matplotlib
-```
+# 创建并激活虚拟环境
+python3 -m venv venv
+source venv/bin/activate  # macOS/Linux
+# Windows: venv\Scripts\activate
 
-或者使用requirements.txt：
-
-```bash
+# 安装依赖
 pip install -r requirements.txt
 ```
 
 ### 第二步：运行基础示例
 
 ```bash
-cd src
-python main.py --mode basic
+# 在项目根目录运行
+python main.py
 ```
 
 你将看到：
@@ -30,36 +30,24 @@ python main.py --mode basic
 ### 第三步：运行测试
 
 ```bash
-cd tests
-python run_tests.py
+# 快速测试模式
+python main.py --mode test
 ```
 
-这将运行一系列测试来验证算法功能。
+这将使用小迷宫快速验证算法功能。
 
-### 第四步：自定义参数
-
-尝试不同的参数配置：
+### 第四步：尝试不同模式
 
 ```bash
-cd src
-
-# 小迷宫，快速测试
-python main.py --mode custom --width 11 --height 11 --population 50 --generations 200
-
-# 大迷宫，复杂挑战
-python main.py --mode custom --width 41 --height 41 --population 200 --generations 1000
-
-# 高变异率
-python main.py --mode custom --mutation 0.3
-```
-
-### 第五步：参数对比实验
-
-```bash
+# 参数对比实验
 python main.py --mode comparison
-```
 
-这将比较不同种群大小的性能。
+# 自定义参数
+python main.py --mode custom --width 15 --height 15 --population 150
+
+# 查看所有选项
+python main.py --help
+```
 
 ## 核心概念
 
@@ -133,9 +121,9 @@ A: 修改visualizer.py中的plot_maze函数，添加save_path参数。
 ### 最简单的使用方式
 
 ```python
-from maze import Maze
-from genetic_algorithm import GeneticAlgorithm
-from visualizer import MazeVisualizer
+from src.maze import Maze
+from src.genetic_algorithm import GeneticAlgorithm
+from src.visualizer import MazeVisualizer
 
 # 创建迷宫
 maze = Maze(21, 21)

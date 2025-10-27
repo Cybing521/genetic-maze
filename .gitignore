@@ -19,12 +19,16 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Virtual Environment
+# Virtual Environment - 不上传虚拟环境
 venv/
 ENV/
 env/
-.venv
+.venv/
+.env
+virtualenv/
+.virtualenv/
 
 # IDE
 .vscode/
@@ -33,6 +37,7 @@ env/
 *.swo
 *~
 .DS_Store
+*.sublime-*
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -41,6 +46,7 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+.tox/
 
 # 输出文件
 *.png
@@ -53,4 +59,5 @@ output/
 # 临时文件
 *.log
 *.tmp
+*.bak
 
