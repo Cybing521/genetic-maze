@@ -19,7 +19,7 @@ function App() {
     mutationRate: 0.02,
     crossoverRate: 0.8,
     elitismCount: 15,  // 5% of 300
-    maxSteps: 200,
+    maxSteps: 500,  // 增大到500，适应更大迷宫
     useAdaptive: true,
     adaptiveMode: 'hybrid'
   });
@@ -99,16 +99,18 @@ function App() {
 
     await animManagerRef.current.start(ga);
     setIsRunning(false);
+    setIsPaused(false);
   };
 
   const handlePause = () => {
-    if (animManagerRef.current) {
-      if (isPaused) {
-        animManagerRef.current.resume();
-      } else {
-        animManagerRef.current.pause();
-      }
-      setIsPaused(!isPaused);
+    if (!animManagerRef.current || !isRunning) return;
+    
+    if (isPaused) {
+      animManagerRef.current.resume();
+      setIsPaused(false);
+    } else {
+      animManagerRef.current.pause();
+      setIsPaused(true);
     }
   };
 
@@ -209,7 +211,7 @@ function App() {
             <input
               type="range"
               min="15"
-              max="41"
+              max="51"
               step="2"
               value={mazeSize}
               onChange={(e) => setMazeSize(parseInt(e.target.value))}

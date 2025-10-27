@@ -11,7 +11,8 @@ export class AnimationManager {
   isPaused: boolean = false;
   
   // 动画控制
-  frameDelay: number = 200;  // 每代之间的延迟（毫秒）
+  frameDelay: number = 300;  // 每代之间的延迟（毫秒） - 增加到300ms
+  transitionDuration: number = 500;  // 过渡时间（毫秒） - 增加到500ms
   lastFrameTime: number = 0;
   previousGeneration: GenerationResult | null = null;
   currentGeneration: GenerationResult | null = null;
@@ -44,7 +45,10 @@ export class AnimationManager {
   async start(ga: GeneticAlgorithm): Promise<void> {
     this.isRunning = true;
     this.isPaused = false;
+    this.config = ga.config;  // 保存配置引用
     this.gaIterator = ga.runWithAnimation();
+    this.lastFrameTime = performance.now();
+    this.lastFpsUpdate = performance.now();
     this.animate();
   }
 
@@ -64,7 +68,7 @@ export class AnimationManager {
 
     // 如果还在过渡中，继续渲染过渡动画
     if (this.transitionProgress < 1) {
-      this.transitionProgress = Math.min(1, this.transitionProgress + deltaTime / 300);  // 300ms过渡时间
+      this.transitionProgress = Math.min(1, this.transitionProgress + deltaTime / this.transitionDuration);
       this.renderTransition();
       this.animationId = requestAnimationFrame(() => this.animate());
       return;
@@ -229,23 +233,53 @@ export class AnimationManager {
     // 绘制迷宫
     this.renderer.renderMaze();
     
-    // 绘制种群路径（半透明）
+    // 绘制历史轨迹
+    this.renderTrails();
+    
+    // 绘制种群路径（增强可见性）
     const populationPaths = result.population.map(ind => ind.path);
-    this.renderer.renderPaths(populationPaths, 0.3);
+    this.renderer.renderPaths(populationPaths, 0.25);  // 稍微增加透明度
     
     // 绘制最佳路径（高亮）
     this.renderer.renderBestPath(result.best.path, true);
     
     // 绘制起终点
-    const maze = (this.renderer as any).maze;
+    const maze = this.renderer.maze;
     if (maze) {
       this.renderer.renderStartEnd(maze);
     }
+    
+    // 绘制种群信息文本
+    this.renderPopulationInfo(result);
     
     // 更新适应度图表
     this.fitnessChart.addPoint(result.generation, result.bestFitness, result.avgFitness);
     this.fitnessChart.render();
   }
+  
+  private renderPopulationInfo(result: GenerationResult): void {
+    const ctx = this.renderer.ctx;
+    const offset = this.renderer.getOffset();
+    
+    // 在迷宫左下角显示种群信息
+    ctx.save();
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
+    ctx.fillText(
+      `Population: ${result.population.length} paths shown`,
+      offset.x,
+      offset.y + (this.renderer.maze?.height ?? 0) * this.renderer.cellSize + 25
+    );
+    ctx.fillText(
+      `(Displaying top ${result.population.length} of ${this.config.populationSize})`,
+      offset.x,
+      offset.y + (this.renderer.maze?.height ?? 0) * this.renderer.cellSize + 40
+    );
+    ctx.restore();
+  }
+  
+  // 添加config引用
+  private config: any;
 
   pause(): void {
     this.isPaused = true;
