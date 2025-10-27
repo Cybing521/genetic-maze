@@ -4,7 +4,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-v1.2.0-orange.svg)](#版本历史)
+[![Version](https://img.shields.io/badge/Version-v1.3.0-orange.svg)](#版本历史)
 
 ---
 
@@ -40,6 +40,7 @@
   - 🎨 Nord主题深色UI
   - 📈 完整的迭代过程仪表盘
   - 🌈 渐变色路径显示
+  - 🎬 **进化动画** (v1.3.0+): 生成GIF动画展示每一代的演化过程
 - 🔧 **多种模式**: basic（基础示例）、test（快速测试）、comparison（参数对比）、custom（自定义）
 - 📈 **性能分析**: 参数对比实验功能
 - 🐍 **单文件启动**: 仅需运行`main.py`
@@ -92,6 +93,9 @@ python main.py
 
 # 或指定模式
 python main.py --mode basic
+
+# 生成进化动画（新功能！）
+python main.py --animate
 ```
 
 你将看到：
@@ -99,6 +103,7 @@ python main.py --mode basic
 2. ✅ 算法运行进度（代数、适应度）
 3. ✅ 完整的进化过程仪表盘
 4. ✅ 最终结果统计
+5. ✅ 进化动画GIF（如果使用--animate）
 
 ### 3. 查看帮助
 
@@ -188,6 +193,73 @@ python main.py --mode custom \
 ---
 
 ## 可视化功能
+
+### 🎬 进化动画 (v1.3.0+ 新功能)
+
+生成GIF动画，展示算法每一代的演化过程！
+
+#### 使用方法
+
+```bash
+# 运行并生成动画
+python main.py --animate
+
+# 动画文件会保存为 evolution.gif
+```
+
+#### 动画内容
+
+动画包含两部分内容：
+
+**左侧**：迷宫和最佳路径
+- 实时显示每一代的最佳路径
+- 路径用渐变色表示
+- 动态更新代数、适应度、步数
+- 找到解决方案时背景变绿
+
+**右侧**：适应度曲线
+- 灰色虚线：最终的完整曲线（参考）
+- 彩色实线：当前进化到的部分
+- 红色圆点：当前代的适应度位置
+- 实时显示算法收敛过程
+
+#### 代码示例
+
+```python
+from src.maze import Maze
+from src.genetic_algorithm import GeneticAlgorithm
+from src.visualizer import MazeVisualizer
+
+maze = Maze(21, 21)
+maze.generate_maze()
+
+ga = GeneticAlgorithm(maze, population_size=100, max_generations=200)
+best = ga.run()
+
+# 生成动画
+viz = MazeVisualizer(maze)
+viz.create_evolution_animation(
+    best_individuals_history=ga.best_individuals_history,
+    fitness_history=ga.fitness_history,
+    save_path="my_evolution.gif",  # 输出文件名
+    fps=5,                          # 帧率
+    interval_ms=200                 # 每帧间隔（毫秒）
+)
+```
+
+#### 动画参数
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `save_path` | `evolution.gif` | 输出文件路径 |
+| `fps` | `5` | 帧率（每秒帧数）|
+| `interval_ms` | `200` | 每帧间隔（毫秒）|
+
+**文件格式**：
+- `.gif` - GIF动画（推荐，无需额外依赖）
+- `.mp4` - MP4视频（需要安装ffmpeg）
+
+---
 
 ### 🎨 进化过程仪表盘 (v1.1.0+)
 
@@ -755,6 +827,19 @@ class MultiTargetMaze(Maze):
 
 ## 版本历史
 
+### v1.3.0 (2025-10-27)
+- 🎬 **新功能**: 进化动画生成
+  - 添加`create_evolution_animation()`方法
+  - 支持GIF和MP4格式
+  - 实时展示每一代的最佳路径
+  - 同步显示适应度演化曲线
+- 🔧 **算法改进**:
+  - 在`GeneticAlgorithm`中记录每代最佳个体历史
+  - 添加`best_individuals_history`属性
+- 💻 **命令行增强**:
+  - 新增`--animate`参数生成动画
+  - 使用示例：`python main.py --animate`
+
 ### v1.2.0 (2025-10-27)
 - 🔧 **重要更新**: 
   - 添加版本管理规则（每次修改必须更新版本号）
@@ -825,7 +910,7 @@ MIT License - 详见LICENSE文件
 ## 联系方式
 
 - **项目**: Maze GA Project
-- **当前版本**: v1.2.0
+- **当前版本**: v1.3.0
 - **最后更新**: 2025-10-27
 
 ---

@@ -16,10 +16,12 @@ from src.genetic_algorithm import GeneticAlgorithm
 from src.visualizer import MazeVisualizer, plot_comparison
 
 
-def run_basic():
+def run_basic(create_animation=False):
     """基础示例：运行标准配置的遗传算法"""
     print("="*70)
     print("遗传算法求解迷宫 - 基础示例")
+    if create_animation:
+        print("（含动画生成）")
     print("="*70)
     
     # 创建迷宫
@@ -58,6 +60,16 @@ def run_basic():
             best_individual=best
         )
         print("✓ 可视化完成！")
+        
+        # 生成动画
+        if create_animation:
+            print("\n【步骤4】生成进化动画...")
+            visualizer.create_evolution_animation(
+                best_individuals_history=ga.best_individuals_history,
+                fitness_history=ga.fitness_history,
+                save_path="evolution.gif",
+                fps=5
+            )
     except Exception as e:
         print(f"⚠ 可视化错误: {e}")
         import traceback
@@ -211,9 +223,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 运行示例:
-  python main.py                      # 默认运行基础示例
-  python main.py --mode test          # 快速测试
-  python main.py --mode comparison    # 参数对比
+  python main.py                           # 默认运行基础示例
+  python main.py --animate                 # 运行并生成动画
+  python main.py --mode test               # 快速测试
+  python main.py --mode comparison         # 参数对比
   python main.py --mode custom --width 15 --height 15 --population 150
         """
     )
@@ -221,6 +234,9 @@ def main():
     parser.add_argument('--mode', type=str, default='basic',
                        choices=['basic', 'test', 'comparison', 'custom'],
                        help='运行模式 (默认: basic)')
+    
+    parser.add_argument('--animate', action='store_true',
+                       help='生成进化过程动画 (GIF格式)')
     
     # 自定义模式参数
     parser.add_argument('--width', type=int, default=21,
@@ -240,7 +256,7 @@ def main():
     
     try:
         if args.mode == 'basic':
-            run_basic()
+            run_basic(create_animation=args.animate)
         elif args.mode == 'test':
             run_test()
         elif args.mode == 'comparison':

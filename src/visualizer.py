@@ -3,7 +3,7 @@
 """
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation, PillowWriter
 import numpy as np
 from typing import List, Tuple, Optional
 import platform
@@ -312,6 +312,183 @@ Status: {'✓ Completed' if best_individual.reached_end else '⚠ Incomplete'}
             print(f"Fitness history saved: {save_path}")
         
         plt.show()
+        plt.close()
+    
+    def create_evolution_animation(self, best_individuals_history: List,
+                                   fitness_history: List[dict],
+                                   save_path: str = "evolution.gif",
+                                   fps: int = 5,
+                                   interval_ms: int = 200):
+        """
+        创建进化过程动画 - 展示每一代的最佳路径演化
+        
+        Args:
+            best_individuals_history: 每一代的最佳个体列表
+            fitness_history: 适应度历史
+            save_path: 保存路径（支持.gif, .mp4）
+            fps: 帧率
+            interval_ms: 每帧间隔（毫秒）
+        """
+        if not best_individuals_history:
+            print("No evolution history to animate")
+            return
+        
+        # 创建图形
+        fig = plt.figure(figsize=(14, 7), facecolor=self.COLORS['background'])
+        gs = fig.add_gridspec(1, 2, wspace=0.3)
+        
+        # 左侧：迷宫和路径
+        ax_maze = fig.add_subplot(gs[0])
+        ax_maze.set_facecolor(self.COLORS['grid'])
+        
+        # 右侧：适应度曲线
+        ax_fitness = fig.add_subplot(gs[1])
+        ax_fitness.set_facecolor(self.COLORS['grid'])
+        
+        # 绘制迷宫背景
+        cmap = plt.cm.colors.ListedColormap(['#ECEFF4', '#4C566A'])
+        ax_maze.imshow(self.maze.grid, cmap=cmap, interpolation='nearest')
+        
+        # 绘制起点和终点
+        start_y, start_x = self.maze.start
+        end_y, end_x = self.maze.end
+        ax_maze.plot(start_x, start_y, 'o', color=self.COLORS['start'], 
+                    markersize=12, markeredgecolor='white', markeredgewidth=2)
+        ax_maze.plot(end_x, end_y, 's', color=self.COLORS['end'], 
+                    markersize=12, markeredgecolor='white', markeredgewidth=2)
+        
+        # 初始化路径线和点
+        line, = ax_maze.plot([], [], linewidth=2.5, alpha=0.8)
+        scatter = ax_maze.scatter([], [], s=30, alpha=0.6, edgecolors='white', linewidths=0.5)
+        
+        # 信息文本
+        info_text = ax_maze.text(0.5, -0.05, '', transform=ax_maze.transAxes,
+                                ha='center', va='top', fontsize=11, 
+                                color=self.COLORS['text'], weight='bold',
+                                bbox=dict(boxstyle='round', facecolor=self.COLORS['wall'], alpha=0.9))
+        
+        ax_maze.set_title('Best Path Evolution', fontsize=14, 
+                         color=self.COLORS['text'], weight='bold', pad=15)
+        ax_maze.axis('off')
+        
+        # 设置适应度曲线
+        generations = list(range(len(fitness_history)))
+        all_best_fitness = [h['best_fitness'] for h in fitness_history]
+        all_avg_fitness = [h['avg_fitness'] for h in fitness_history]
+        
+        ax_fitness.plot(generations, all_best_fitness, color='#88C0D0', 
+                       linewidth=1, alpha=0.3, label='Best (Final)')
+        ax_fitness.plot(generations, all_avg_fitness, color='#D08770', 
+                       linewidth=1, alpha=0.3, linestyle='--', label='Avg (Final)')
+        
+        # 动态曲线（会更新）
+        best_line, = ax_fitness.plot([], [], color='#88C0D0', linewidth=2.5, 
+                                     marker='o', markersize=4, label='Best (Current)')
+        avg_line, = ax_fitness.plot([], [], color='#D08770', linewidth=2, 
+                                    linestyle='--', label='Avg (Current)')
+        current_point = ax_fitness.scatter([], [], s=100, color='#BF616A', 
+                                          marker='o', zorder=5, edgecolors='white', linewidths=2)
+        
+        ax_fitness.set_xlabel('Generation', fontsize=11, color=self.COLORS['text'])
+        ax_fitness.set_ylabel('Fitness', fontsize=11, color=self.COLORS['text'])
+        ax_fitness.set_title('Fitness Evolution', fontsize=14, 
+                            color=self.COLORS['text'], weight='bold', pad=15)
+        ax_fitness.legend(loc='lower right', framealpha=0.9, 
+                         facecolor=self.COLORS['wall'], prop={'size': 9})
+        ax_fitness.grid(True, alpha=0.2, color=self.COLORS['text'])
+        ax_fitness.tick_params(colors=self.COLORS['text'])
+        ax_fitness.set_xlim(-1, len(generations))
+        
+        # 设置y轴范围
+        all_fitness = all_best_fitness + all_avg_fitness
+        y_min, y_max = min(all_fitness), max(all_fitness)
+        y_range = y_max - y_min
+        ax_fitness.set_ylim(y_min - y_range*0.1, y_max + y_range*0.1)
+        
+        def init():
+            """初始化动画"""
+            line.set_data([], [])
+            scatter.set_offsets(np.empty((0, 2)))
+            best_line.set_data([], [])
+            avg_line.set_data([], [])
+            current_point.set_offsets(np.empty((0, 2)))
+            info_text.set_text('')
+            return line, scatter, best_line, avg_line, current_point, info_text
+        
+        def update(frame):
+            """更新每一帧"""
+            if frame >= len(best_individuals_history):
+                frame = len(best_individuals_history) - 1
+            
+            # 获取当前代的最佳个体
+            individual = best_individuals_history[frame]
+            path = individual.path
+            
+            # 更新路径
+            if path:
+                path_array = np.array(path)
+                colors = plt.cm.cool(np.linspace(0, 1, len(path)))
+                
+                # 绘制路径
+                line.set_data(path_array[:, 1], path_array[:, 0])
+                line.set_color(self.COLORS['path_color'])
+                scatter.set_offsets(path_array[:, [1, 0]])
+                scatter.set_color(colors)
+            
+            # 更新信息文本
+            gen = frame
+            fitness = individual.fitness
+            length = len(path)
+            status = "SUCCESS ✓" if individual.reached_end else "SEARCHING..."
+            status_color = self.COLORS['start'] if individual.reached_end else self.COLORS['accent']
+            
+            info_str = f"Gen: {gen} | Fitness: {fitness:.1f} | Steps: {length} | {status}"
+            info_text.set_text(info_str)
+            info_text.set_bbox(dict(boxstyle='round', 
+                                   facecolor=self.COLORS['wall'] if not individual.reached_end else '#A3BE8C',
+                                   alpha=0.9))
+            
+            # 更新适应度曲线
+            current_gens = generations[:frame+1]
+            current_best = all_best_fitness[:frame+1]
+            current_avg = all_avg_fitness[:frame+1]
+            
+            best_line.set_data(current_gens, current_best)
+            avg_line.set_data(current_gens, current_avg)
+            current_point.set_offsets([[gen, fitness]])
+            
+            return line, scatter, best_line, avg_line, current_point, info_text
+        
+        # 创建动画
+        total_frames = len(best_individuals_history)
+        print(f"Creating animation with {total_frames} frames...")
+        
+        anim = FuncAnimation(fig, update, init_func=init,
+                           frames=total_frames, interval=interval_ms,
+                           blit=True, repeat=True)
+        
+        # 保存动画
+        try:
+            if save_path.endswith('.gif'):
+                print(f"Saving as GIF (this may take a while)...")
+                writer = PillowWriter(fps=fps)
+                anim.save(save_path, writer=writer)
+                print(f"✓ Animation saved: {save_path}")
+            elif save_path.endswith('.mp4'):
+                print(f"Saving as MP4...")
+                anim.save(save_path, writer='ffmpeg', fps=fps)
+                print(f"✓ Animation saved: {save_path}")
+            else:
+                print(f"Warning: Unsupported format, saving as GIF")
+                save_path = save_path.rsplit('.', 1)[0] + '.gif'
+                writer = PillowWriter(fps=fps)
+                anim.save(save_path, writer=writer)
+                print(f"✓ Animation saved: {save_path}")
+        except Exception as e:
+            print(f"Error saving animation: {e}")
+            print("Trying to display instead...")
+            plt.show()
+        
         plt.close()
 
 

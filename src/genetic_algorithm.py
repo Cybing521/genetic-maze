@@ -136,6 +136,7 @@ class GeneticAlgorithm:
         self.best_individual: Individual = None
         self.generation = 0
         self.fitness_history = []
+        self.best_individuals_history = []  # 记录每一代的最佳个体（用于动画）
         
     def initialize_population(self):
         """初始化种群"""
@@ -305,6 +306,11 @@ class GeneticAlgorithm:
             'avg_fitness': avg_fitness,
             'reached_end': self.best_individual.reached_end
         })
+        
+        # 保存当前代的最佳个体（用于动画）
+        # 创建副本以避免引用问题
+        best_copy = Individual(self.maze, self.best_individual.path.copy(), self.max_steps)
+        self.best_individuals_history.append(best_copy)
         
         self.generation += 1
         return self.best_individual
