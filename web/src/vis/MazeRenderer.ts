@@ -35,24 +35,33 @@ export class MazeRenderer {
 
   setMaze(maze: Maze): void {
     this.maze = maze;
-    // 计算最佳单元格大小
-    const maxWidth = this.canvas.width * 0.6;
-    const maxHeight = this.canvas.height - 100;
+    
+    // 计算最佳单元格大小 - 考虑整个canvas区域
+    const canvasWidth = this.canvas.width;
+    const canvasHeight = this.canvas.height;
+    
+    // 留出边距
+    const padding = 100;
+    const availableWidth = canvasWidth - padding * 2;
+    const availableHeight = canvasHeight - padding * 2;
     
     this.cellSize = Math.min(
-      Math.floor(maxWidth / maze.width),
-      Math.floor(maxHeight / maze.height),
-      30
+      Math.floor(availableWidth / maze.width),
+      Math.floor(availableHeight / maze.height),
+      25  // 最大单元格大小
     );
 
-    // 调整canvas大小
+    // 调整离屏canvas大小
     const mazeWidth = maze.width * this.cellSize;
     const mazeHeight = maze.height * this.cellSize;
     
     this.offscreenCanvas.width = mazeWidth;
     this.offscreenCanvas.height = mazeHeight;
 
-    // 缓存迷宫
+    // 清除旧缓存
+    this.mazeCache = null;
+    
+    // 缓存新迷宫
     this.cacheMaze(maze);
   }
 
@@ -83,14 +92,26 @@ export class MazeRenderer {
   }
 
   renderMaze(): void {
-    if (this.mazeCache) {
-      this.ctx.putImageData(this.mazeCache, 50, 100);
+    if (this.mazeCache && this.maze) {
+      // 居中显示迷宫
+      const x = (this.canvas.width - this.maze.width * this.cellSize) / 2;
+      const y = 80;  // 顶部留空间给HUD
+      this.ctx.putImageData(this.mazeCache, x, y);
     }
+  }
+  
+  getOffset(): { x: number; y: number } {
+    if (!this.maze) return { x: 0, y: 0 };
+    return {
+      x: (this.canvas.width - this.maze.width * this.cellSize) / 2,
+      y: 80
+    };
   }
 
   renderStartEnd(maze: Maze): void {
     const [sy, sx] = maze.start;
     const [ey, ex] = maze.end;
+    const offset = this.getOffset();
 
     this.ctx.save();
     
@@ -100,8 +121,8 @@ export class MazeRenderer {
     this.ctx.shadowColor = this.COLORS.start;
     this.ctx.beginPath();
     this.ctx.arc(
-      50 + (sx + 0.5) * this.cellSize,
-      100 + (sy + 0.5) * this.cellSize,
+      offset.x + (sx + 0.5) * this.cellSize,
+      offset.y + (sy + 0.5) * this.cellSize,
       this.cellSize * 0.4,
       0,
       Math.PI * 2
@@ -113,8 +134,8 @@ export class MazeRenderer {
     this.ctx.shadowColor = this.COLORS.end;
     const rectSize = this.cellSize * 0.6;
     this.ctx.fillRect(
-      50 + (ex + 0.5) * this.cellSize - rectSize / 2,
-      100 + (ey + 0.5) * this.cellSize - rectSize / 2,
+      offset.x + (ex + 0.5) * this.cellSize - rectSize / 2,
+      offset.y + (ey + 0.5) * this.cellSize - rectSize / 2,
       rectSize,
       rectSize
     );
@@ -123,6 +144,8 @@ export class MazeRenderer {
   }
 
   renderPaths(paths: Position[][], alpha: number = 0.4): void {
+    const offset = this.getOffset();
+    
     this.ctx.save();
     this.ctx.globalAlpha = alpha;
     this.ctx.globalCompositeOperation = 'lighter';
@@ -138,8 +161,8 @@ export class MazeRenderer {
 
       this.ctx.beginPath();
       path.forEach((pos, i) => {
-        const x = 50 + (pos[1] + 0.5) * this.cellSize;
-        const y = 100 + (pos[0] + 0.5) * this.cellSize;
+        const x = offset.x + (pos[1] + 0.5) * this.cellSize;
+        const y = offset.y + (pos[0] + 0.5) * this.cellSize;
         if (i === 0) this.ctx.moveTo(x, y);
         else this.ctx.lineTo(x, y);
       });
@@ -152,6 +175,8 @@ export class MazeRenderer {
   renderBestPath(path: Position[], _animate: boolean = true): void {
     if (path.length < 2) return;
 
+    const offset = this.getOffset();
+    
     this.ctx.save();
     this.ctx.globalCompositeOperation = 'lighter';
     
@@ -160,10 +185,10 @@ export class MazeRenderer {
       const t = i / (path.length - 1);
       const color = this.interpolatePathColor(t);
       
-      const x1 = 50 + (path[i][1] + 0.5) * this.cellSize;
-      const y1 = 100 + (path[i][0] + 0.5) * this.cellSize;
-      const x2 = 50 + (path[i + 1][1] + 0.5) * this.cellSize;
-      const y2 = 100 + (path[i + 1][0] + 0.5) * this.cellSize;
+      const x1 = offset.x + (path[i][1] + 0.5) * this.cellSize;
+      const y1 = offset.y + (path[i][0] + 0.5) * this.cellSize;
+      const x2 = offset.x + (path[i + 1][1] + 0.5) * this.cellSize;
+      const y2 = offset.y + (path[i + 1][0] + 0.5) * this.cellSize;
 
       // 外层光晕
       this.ctx.strokeStyle = color;
