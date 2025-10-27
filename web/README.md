@@ -171,11 +171,23 @@ MIT License
 
 ---
 
-**版本**: 1.2.1  
+**版本**: 1.3.0  
 **作者**: Maze GA Project  
 **最后更新**: 2025-10-27
 
 ## 更新日志
+
+### v1.3.0 (2025-10-27)
+- 修复迷宫大小改变后点击Start重置为21×21的问题
+- useEffect添加mazeSize依赖，大小变化自动重新初始化
+- 增强得分反馈可见性：
+  - Best Fitness找到解决方案时变绿色+放大+发光
+  - 添加"SOLVED!"徽章（脉冲动画）
+  - Avg Fitness添加进度条（相对于Best的百分比）
+  - Diversity颜色编码：黄(高)→青(中)→绿(低)
+  - Steps添加子文本："Optimal"或"Searching..."
+  - Status状态分running(青色)和success(绿色+脉冲)
+- FPS显示增大到20px，更醒目
 
 ### v1.2.1 (2025-10-27)
 - 修复Pause按钮无法点击的问题

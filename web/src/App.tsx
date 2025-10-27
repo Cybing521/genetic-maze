@@ -85,8 +85,15 @@ function App() {
     renderer.clear();
     renderer.renderMaze();
     renderer.renderStartEnd(maze);
+    
+    // 清理函数
+    return () => {
+      if (fpsIntervalRef.current) {
+        clearInterval(fpsIntervalRef.current);
+      }
+    };
 
-  }, []);
+  }, [mazeSize]);  // 添加mazeSize依赖，大小变化时重新初始化
 
   const handleStart = async () => {
     if (!mazeRef.current || !animManagerRef.current) return;
@@ -117,23 +124,45 @@ function App() {
   const handleReset = () => {
     if (animManagerRef.current) {
       animManagerRef.current.reset();
+      animManagerRef.current.pathTrails = [];  // 清空轨迹
     }
     setIsRunning(false);
     setIsPaused(false);
     setCurrentGen(null);
+    setFps(60);
 
-    // 重新生成迷宫
-    if (canvasRef.current && mazeRef.current) {
-      const maze = new Maze(mazeSize, mazeSize);
+    // 重新生成迷宫 - 使用当前的mazeSize
+    if (canvasRef.current && chartCanvasRef.current) {
+      const canvas = canvasRef.current;
+      const chartCanvas = chartCanvasRef.current;
+      
+      const maze = new Maze(mazeSize, mazeSize);  // 使用状态中的mazeSize
       maze.generate();
       mazeRef.current = maze;
       
-      const ctx = canvasRef.current.getContext('2d')!;
-      const renderer = new MazeRenderer(canvasRef.current, ctx);
+      const ctx = canvas.getContext('2d')!;
+      const chartCtx = chartCanvas.getContext('2d')!;
+      
+      const renderer = new MazeRenderer(canvas, ctx);
+      const fitnessChart = new FitnessChart(chartCanvas, chartCtx);
+      
       renderer.setMaze(maze);
       renderer.clear();
       renderer.renderMaze();
       renderer.renderStartEnd(maze);
+      
+      // 更新动画管理器的renderer
+      const animManager = new AnimationManager(
+        renderer,
+        fitnessChart,
+        (result) => {
+          setCurrentGen(result);
+          if (animManager.fps) {
+            setFps(animManager.fps);
+          }
+        }
+      );
+      animManagerRef.current = animManager;
     }
   };
 
@@ -159,23 +188,53 @@ function App() {
             <div className="hud-stats">
               <div className="stat">
                 <span className="label">Generation</span>
-                <span className="value">{currentGen.generation}</span>
+                <span className="value highlight">{currentGen.generation}</span>
               </div>
               <div className="stat">
                 <span className="label">Best Fitness</span>
-                <span className="value">{currentGen.bestFitness.toFixed(1)}</span>
+                <span 
+                  className={`value ${currentGen.best.reachedEnd ? 'success' : 'normal'}`}
+                  style={{
+                    fontSize: currentGen.best.reachedEnd ? '16px' : '14px',
+                    fontWeight: currentGen.best.reachedEnd ? '700' : '600'
+                  }}
+                >
+                  {currentGen.bestFitness.toFixed(0)}
+                </span>
+                {currentGen.best.reachedEnd && (
+                  <div className="fitness-badge">SOLVED!</div>
+                )}
               </div>
               <div className="stat">
                 <span className="label">Avg Fitness</span>
-                <span className="value">{currentGen.avgFitness.toFixed(1)}</span>
+                <span className="value">{currentGen.avgFitness.toFixed(0)}</span>
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill"
+                    style={{
+                      width: `${Math.min(100, (currentGen.avgFitness / currentGen.bestFitness) * 100)}%`
+                    }}
+                  />
+                </div>
               </div>
               <div className="stat">
                 <span className="label">Diversity</span>
-                <span className="value">{currentGen.diversity.toFixed(1)}</span>
+                <span 
+                  className="value"
+                  style={{
+                    color: currentGen.diversity > 100 ? '#EBCB8B' : 
+                           currentGen.diversity > 50 ? 'rgba(0, 255, 255, 0.9)' : '#A3BE8C'
+                  }}
+                >
+                  {currentGen.diversity.toFixed(0)}
+                </span>
               </div>
               <div className="stat">
                 <span className="label">Steps</span>
                 <span className="value">{currentGen.best.path.length}</span>
+                <span className="sub-value">
+                  {currentGen.best.reachedEnd ? 'Optimal' : 'Searching...'}
+                </span>
               </div>
             </div>
           )}
@@ -183,12 +242,15 @@ function App() {
         <div className="hud-right">
           <div className="fps-display">
             <span className="label">FPS</span>
-            <span className="value" style={{color: fps >= 58 ? '#A3BE8C' : fps >= 50 ? '#EBCB8B' : '#BF616A'}}>
+            <span className="value" style={{
+              color: fps >= 58 ? '#A3BE8C' : fps >= 50 ? '#EBCB8B' : '#BF616A',
+              fontSize: '20px'
+            }}>
               {fps}
             </span>
           </div>
           {currentGen && (
-            <div className="status">
+            <div className={`status ${currentGen.best.reachedEnd ? 'success' : 'running'}`}>
               {currentGen.best.reachedEnd ? '✓ SUCCESS' : '⚡ EVOLVING'}
             </div>
           )}
