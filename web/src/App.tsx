@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Maze } from './maze/Maze';
 import { GeneticAlgorithm } from './ga/GeneticAlgorithm';
 import { AdaptiveGeneticAlgorithm } from './ga/AdaptiveGA';
+import { DetailedGeneticAlgorithm } from './ga/DetailedGA';
 import { MazeRenderer } from './vis/MazeRenderer';
 import { AnimationManager } from './vis/AnimationManager';
 import { FitnessChart } from './vis/FitnessChart';
@@ -25,8 +26,11 @@ function App() {
   });
 
   const [mazeSize, setMazeSize] = useState<number>(21);
+  const [animationSpeed, setAnimationSpeed] = useState<number>(5);  // 1-10，越大越快
+  const [showDetailedProcess, setShowDetailedProcess] = useState<boolean>(true);  // 展示详细过程
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [processMessage, setProcessMessage] = useState<string>('');
   const [isRecording, setIsRecording] = useState(false);
   const [currentGen, setCurrentGen] = useState<GenerationResult | null>(null);
   const [fps, setFps] = useState<number>(60);
@@ -101,12 +105,20 @@ function App() {
     setIsRunning(true);
     setIsPaused(false);
 
-    const GA = config.useAdaptive ? AdaptiveGeneticAlgorithm : GeneticAlgorithm;
-    const ga = new GA(mazeRef.current, config);
-
-    await animManagerRef.current.start(ga);
+    if (showDetailedProcess) {
+      // 使用详细展示版本
+      const ga = new DetailedGeneticAlgorithm(mazeRef.current, config);
+      await animManagerRef.current.startDetailed(ga, setProcessMessage);
+    } else {
+      // 使用快速版本
+      const GA = config.useAdaptive ? AdaptiveGeneticAlgorithm : GeneticAlgorithm;
+      const ga = new GA(mazeRef.current, config);
+      await animManagerRef.current.start(ga);
+    }
+    
     setIsRunning(false);
     setIsPaused(false);
+    setProcessMessage('');
   };
 
   const handlePause = () => {
@@ -260,6 +272,11 @@ function App() {
       <div className="main-content">
         {/* Canvas区域 */}
         <div className="canvas-area">
+          {processMessage && (
+            <div className="process-message">
+              {processMessage}
+            </div>
+          )}
           <canvas ref={canvasRef} />
           <canvas ref={chartCanvasRef} className="fitness-chart" />
         </div>
@@ -273,11 +290,32 @@ function App() {
             <input
               type="range"
               min="15"
-              max="51"
+              max="101"
               step="2"
               value={mazeSize}
               onChange={(e) => setMazeSize(parseInt(e.target.value))}
               disabled={isRunning}
+            />
+          </div>
+          
+          <div className="control-group">
+            <label>Animation Speed: {animationSpeed}/10</label>
+            <input
+              type="range"
+              min="1"
+              max="10"
+              step="1"
+              value={animationSpeed}
+              onChange={(e) => {
+                const speed = parseInt(e.target.value);
+                setAnimationSpeed(speed);
+                // 更新动画管理器的速度
+                if (animManagerRef.current) {
+                  // 速度1-10 映射到 frameDelay 1000-100ms
+                  animManagerRef.current.frameDelay = 1100 - speed * 100;
+                  animManagerRef.current.transitionDuration = 1100 - speed * 100;
+                }
+              }}
             />
           </div>
 
@@ -337,6 +375,18 @@ function App() {
             <label>
               <input
                 type="checkbox"
+                checked={showDetailedProcess}
+                onChange={(e) => setShowDetailedProcess(e.target.checked)}
+                disabled={isRunning}
+              />
+              Show Exploration Process ⭐
+            </label>
+          </div>
+          
+          <div className="control-group checkbox">
+            <label>
+              <input
+                type="checkbox"
                 checked={config.useAdaptive}
                 onChange={(e) => setConfig({...config, useAdaptive: e.target.checked})}
                 disabled={isRunning}
@@ -358,8 +408,12 @@ function App() {
               onClick={handlePause}
               disabled={!isRunning}
               className="btn-secondary"
+              style={{
+                opacity: !isRunning ? 0.5 : 1,
+                cursor: !isRunning ? 'not-allowed' : 'pointer'
+              }}
             >
-              {isPaused ? 'Resume' : 'Pause'}
+              {isPaused ? '▶ Resume' : '⏸ Pause'}
             </button>
             
             <button
@@ -392,8 +446,23 @@ function App() {
           <div className="info-panel">
             <h4>Algorithm Info</h4>
             <p>Type: {config.useAdaptive ? 'Adaptive GA' : 'Standard GA'}</p>
-            <p>Elitism: {config.elitismCount}</p>
+            <p>Population: {config.populationSize} individuals</p>
+            <p>Elitism: {config.elitismCount} ({((config.elitismCount/config.populationSize)*100).toFixed(1)}%)</p>
             <p>Max Steps: {config.maxSteps}</p>
+            <p>Max Generations: {config.maxGenerations}</p>
+          </div>
+          
+          <div className="control-group">
+            <label>Max Generations: {config.maxGenerations}</label>
+            <input
+              type="range"
+              min="100"
+              max="2000"
+              step="100"
+              value={config.maxGenerations}
+              onChange={(e) => setConfig({...config, maxGenerations: parseInt(e.target.value)})}
+              disabled={isRunning}
+            />
           </div>
         </div>
       </div>

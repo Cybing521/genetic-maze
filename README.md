@@ -4,7 +4,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-v2.0.4-orange.svg)](#版本历史)
+[![Version](https://img.shields.io/badge/Version-v2.1.0-orange.svg)](#版本历史)
 
 ---
 
@@ -905,6 +905,7 @@ class MultiTargetMaze(Maze):
 
 查看详细的更新内容请使用：`git log`
 
+- **v2.1.0** (2025-10-27) - Web详细过程展示：遗传算法每一步可视化
 - **v2.0.4** (2025-10-27) - Web视觉反馈优化：修复迷宫重置+增强得分显示
 - **v2.0.3** (2025-10-27) - Web体验优化：修复按钮+减慢动画+增强说明
 - **v2.0.2** (2025-10-27) - Web视觉全面升级：新配色+轨迹淡出+FPS显示
@@ -953,7 +954,7 @@ MIT License - 详见LICENSE文件
 ## 联系方式
 
 - **项目**: Maze GA Project
-- **当前版本**: v2.0.4 (Python) / v1.3.0 (Web)
+- **当前版本**: v2.1.0 (Python) / v1.4.0 (Web)
 - **最后更新**: 2025-10-27
 
 ---

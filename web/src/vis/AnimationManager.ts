@@ -51,6 +51,101 @@ export class AnimationManager {
     this.lastFpsUpdate = performance.now();
     this.animate();
   }
+  
+  async startDetailed(ga: any, onMessage: (msg: string) => void): Promise<void> {
+    this.isRunning = true;
+    this.isPaused = false;
+    this.config = ga.config;
+    this.lastFrameTime = performance.now();
+    this.lastFpsUpdate = performance.now();
+    
+    const detailedIterator = ga.runWithDetailedAnimation();
+    
+    for await (const frame of detailedIterator) {
+      if (!this.isRunning) break;
+      
+      // 等待暂停
+      while (this.isPaused && this.isRunning) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      if (!this.isRunning) break;
+      
+      // 显示消息
+      onMessage(frame.message);
+      
+      // 清空画布
+      this.renderer.clear();
+      this.renderer.renderMaze();
+      
+      // 绘制历史轨迹
+      this.renderTrails();
+      
+      // 绘制当前种群（高亮特定个体）
+      const paths = frame.population.slice(0, 20).map((ind: any) => ind.path);  // 显示前20个
+      
+      if (frame.highlight && frame.highlight.length > 0) {
+        // 普通路径
+        const normalPaths = paths.filter((_: any, idx: number) => !frame.highlight!.includes(idx));
+        this.renderer.renderPaths(normalPaths, 0.15);
+        
+        // 高亮路径
+        const highlightPaths = frame.highlight.map((idx: number) => paths[idx]).filter((p: any) => p);
+        highlightPaths.forEach((path: Position[], idx: number) => {
+          if (idx === 0) {
+            this.renderer.renderBestPath(path, true);  // 最佳用发光效果
+          } else {
+            this.renderer.ctx.save();
+            this.renderer.ctx.strokeStyle = 'rgba(235, 203, 139, 0.8)';  // 黄色
+            this.renderer.ctx.lineWidth = 2.5;
+            this.renderer.ctx.lineCap = 'round';
+            const offset = this.renderer.getOffset();
+            this.renderer.ctx.beginPath();
+            path.forEach((pos: Position, i: number) => {
+              const x = offset.x + (pos[1] + 0.5) * this.renderer.cellSize;
+              const y = offset.y + (pos[0] + 0.5) * this.renderer.cellSize;
+              if (i === 0) this.renderer.ctx.moveTo(x, y);
+              else this.renderer.ctx.lineTo(x, y);
+            });
+            this.renderer.ctx.stroke();
+            this.renderer.ctx.restore();
+          }
+        });
+      } else {
+        this.renderer.renderPaths(paths, 0.25);
+        if (frame.population[0]) {
+          this.renderer.renderBestPath(frame.population[0].path, true);
+        }
+      }
+      
+      // 绘制起终点
+      if (this.renderer.maze) {
+        this.renderer.renderStartEnd(this.renderer.maze);
+      }
+      
+      // 更新图表（如果有适应度数据）
+      if (frame.type === 'complete' && frame.population[0]) {
+        const best = frame.population[0];
+        const avg = frame.population.reduce((sum: number, ind: any) => sum + ind.fitness, 0) / frame.population.length;
+        this.fitnessChart.addPoint(this.generation, best.fitness, avg);
+        this.fitnessChart.render();
+        
+        if (frame.type === 'complete' && best) {
+          this.addTrail(best.path, this.generation);
+        }
+        
+        this.generation++;
+      }
+      
+      // 等待一帧
+      await new Promise(resolve => requestAnimationFrame(resolve));
+    }
+    
+    this.isRunning = false;
+    onMessage('');
+  }
+  
+  private generation: number = 0;
 
   private async animate(): Promise<void> {
     if (!this.isRunning || this.isPaused || !this.gaIterator) return;
