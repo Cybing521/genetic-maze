@@ -754,59 +754,127 @@ Status: {'✓ Completed' if best_individual.reached_end else '⚠ Incomplete'}
         plt.close()
 
 
-def plot_comparison(results: List[Tuple[str, any, any]], save_path: str = None):
+def plot_comparison(results: List[Tuple], save_path: str = None):
     """
-    绘制多个结果的对比
+    绘制多个结果的精美对比图
     
     Args:
-        results: 结果列表，每个元素为 (标签, 迷宫, 个体)
+        results: 结果列表，每个元素为 (标签, 迷宫, 个体, 代数)
         save_path: 保存路径
     """
     n = len(results)
-    fig_width = min(5 * n, 15)  # 限制最大宽度
-    fig, axes = plt.subplots(1, n, figsize=(fig_width, 5))
-    
-    if n == 1:
-        axes = [axes]
-    
     colors = MazeVisualizer.COLORS
     
-    for idx, (label, maze, individual) in enumerate(results):
-        ax = axes[idx]
-        ax.set_facecolor(colors['grid'])
+    # 创建垂直布局，每个结果占一行
+    fig = plt.figure(figsize=(16, 5*n), facecolor=colors['background'])
+    gs = fig.add_gridspec(n, 3, hspace=0.4, wspace=0.3, width_ratios=[2, 1, 1])
+    
+    for idx, result_data in enumerate(results):
+        # 解包结果（兼容新旧格式）
+        if len(result_data) == 4:
+            label, maze, individual, generation = result_data
+        else:
+            label, maze, individual = result_data
+            generation = 0
+        
+        # 左侧：迷宫和路径
+        ax_maze = fig.add_subplot(gs[idx, 0])
+        ax_maze.set_facecolor(colors['grid'])
         
         # 绘制迷宫
         cmap = plt.cm.colors.ListedColormap(['#ECEFF4', '#4C566A'])
-        ax.imshow(maze.grid, cmap=cmap, interpolation='nearest')
+        ax_maze.imshow(maze.grid, cmap=cmap, interpolation='nearest')
         
         # 绘制起点和终点
         start_y, start_x = maze.start
         end_y, end_x = maze.end
         
-        ax.plot(start_x, start_y, 'o', color=colors['start'], 
-               markersize=10, markeredgecolor='white', markeredgewidth=1.5)
-        ax.plot(end_x, end_y, 's', color=colors['end'], 
-               markersize=10, markeredgecolor='white', markeredgewidth=1.5)
+        ax_maze.plot(start_x, start_y, 'o', color=colors['start'], 
+                    markersize=12, markeredgecolor='white', markeredgewidth=2, label='Start')
+        ax_maze.plot(end_x, end_y, 's', color=colors['end'], 
+                    markersize=12, markeredgecolor='white', markeredgewidth=2, label='End')
         
-        # 绘制路径
-        if individual and individual.path:
+        # 绘制路径（渐变色）
+        if individual and individual.path and len(individual.path) > 0:
             path_array = np.array(individual.path)
             path_colors = plt.cm.cool(np.linspace(0, 1, len(individual.path)))
             
+            # 绘制路径线段
             for i in range(len(individual.path) - 1):
-                ax.plot([path_array[i, 1], path_array[i+1, 1]], 
-                       [path_array[i, 0], path_array[i+1, 0]], 
-                       color=path_colors[i], linewidth=2, alpha=0.7)
+                ax_maze.plot([path_array[i, 1], path_array[i+1, 1]], 
+                           [path_array[i, 0], path_array[i+1, 0]], 
+                           color=path_colors[i], linewidth=2.5, alpha=0.8)
+            
+            # 绘制路径点
+            ax_maze.scatter(path_array[:, 1], path_array[:, 0], 
+                          c=path_colors, s=25, alpha=0.6, 
+                          edgecolors='white', linewidths=0.5)
         
-        status = "SUCCESS" if individual and individual.reached_end else "FAIL"
-        color = colors['start'] if individual and individual.reached_end else colors['end']
+        # 标题
+        status = "SUCCESS ✓" if individual and individual.reached_end else "INCOMPLETE"
+        title_color = colors['start'] if individual and individual.reached_end else colors['end']
+        ax_maze.set_title(f'{label} | {status}',
+                         fontsize=13, color=title_color, weight='bold', pad=10)
+        ax_maze.legend(loc='upper right', framealpha=0.9, facecolor=colors['wall'], fontsize=8)
+        ax_maze.axis('off')
         
-        ax.set_title(f'{label}\nSteps: {len(individual.path) if individual else 0} | {status}',
-                    fontsize=10, color=color, weight='bold')
-        ax.axis('off')
+        # 中间：统计信息
+        ax_stats = fig.add_subplot(gs[idx, 1])
+        ax_stats.set_facecolor(colors['background'])
+        ax_stats.axis('off')
+        
+        stats_text = f"""
+STATISTICS
+━━━━━━━━━━━━━
+Generations: {generation}
+Fitness: {individual.fitness:.1f}
+Path Length: {len(individual.path)}
+Unique: {len(set(individual.path))}
+Efficiency: {len(set(individual.path))/len(individual.path)*100:.1f}%
+━━━━━━━━━━━━━
+Status: {status}
+        """
+        
+        ax_stats.text(0.5, 0.5, stats_text, 
+                     fontsize=10, color=colors['text'],
+                     family='monospace', ha='center', va='center',
+                     bbox=dict(boxstyle='round,pad=1', 
+                             facecolor=colors['wall'], 
+                             edgecolor=title_color, linewidth=2,
+                             alpha=0.9))
+        
+        # 右侧：路径可视化（简化版）
+        ax_path = fig.add_subplot(gs[idx, 2])
+        ax_path.set_facecolor(colors['grid'])
+        
+        if individual and individual.path:
+            # 绘制路径轨迹图
+            path_array = np.array(individual.path)
+            
+            # 创建热力图显示路径访问
+            heatmap = np.zeros_like(maze.grid, dtype=float)
+            for pos in individual.path:
+                heatmap[pos[0], pos[1]] += 1
+            
+            # 归一化
+            if heatmap.max() > 0:
+                heatmap = heatmap / heatmap.max()
+            
+            ax_path.imshow(heatmap, cmap='YlOrRd', alpha=0.7, interpolation='nearest')
+            ax_path.imshow(maze.grid, cmap='binary', alpha=0.3, interpolation='nearest')
+            
+            ax_path.plot(start_x, start_y, 'o', color=colors['start'], 
+                        markersize=10, markeredgecolor='white', markeredgewidth=2)
+            ax_path.plot(end_x, end_y, 's', color=colors['end'], 
+                        markersize=10, markeredgecolor='white', markeredgewidth=2)
+        
+        ax_path.set_title('Path Heatmap', fontsize=11, 
+                         color=colors['text'], weight='bold')
+        ax_path.axis('off')
     
-    fig.patch.set_facecolor(colors['background'])
-    plt.tight_layout()
+    # 总标题
+    plt.suptitle('Parameter Comparison Results', 
+                fontsize=16, color=colors['text'], weight='bold', y=0.98)
     
     if save_path:
         plt.savefig(save_path, dpi=100, bbox_inches='tight',

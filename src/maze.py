@@ -3,6 +3,7 @@
 """
 import random
 import numpy as np
+import time
 from typing import Tuple, List
 
 
@@ -23,14 +24,21 @@ class Maze:
         self.start = (1, 1)  # 起点
         self.end = (height - 2, width - 2)  # 终点
         
-    def generate_maze(self, complexity: float = 0.75, density: float = 0.75):
+    def generate_maze(self, complexity: float = 0.75, density: float = 0.75, seed: int = None):
         """
         使用随机算法生成迷宫
         
         Args:
             complexity: 迷宫复杂度 (0-1)
             density: 迷宫密度 (0-1)
+            seed: 随机种子（None表示使用时间戳）
         """
+        # 设置随机种子确保每次不同
+        if seed is None:
+            seed = int(time.time() * 1000) % 1000000
+        random.seed(seed)
+        np.random.seed(seed)
+        
         # 创建边界
         self.grid = np.zeros((self.height, self.width), dtype=int)
         self.grid[0, :] = self.grid[-1, :] = 1

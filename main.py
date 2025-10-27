@@ -148,9 +148,9 @@ def run_comparison():
     print("遗传算法求解迷宫 - 参数对比")
     print("="*70)
     
-    # 创建迷宫
+    # 创建迷宫（使用固定种子以便公平对比）
     maze = Maze(width=21, height=21)
-    maze.generate_maze()
+    maze.generate_maze(seed=42)  # 固定种子确保迷宫一致
     
     print("\n迷宫结构:")
     print(maze)
@@ -162,8 +162,17 @@ def run_comparison():
     print(f"\n对比不同种群大小: {population_sizes}")
     print("-"*70)
     
-    for pop_size in population_sizes:
+    import time
+    for idx, pop_size in enumerate(population_sizes):
         print(f"\n测试种群大小 = {pop_size}")
+        
+        # 使用不同的随机种子确保算法运行不同
+        import random
+        import numpy as np
+        seed = int(time.time() * 1000) % 1000000 + idx * 1000
+        random.seed(seed)
+        np.random.seed(seed)
+        
         ga = GeneticAlgorithm(
             maze=maze,
             population_size=pop_size,
@@ -177,9 +186,10 @@ def run_comparison():
         
         print(f"  结果: {'成功' if best.reached_end else '失败'} | "
               f"适应度={best.fitness:.2f} | "
-              f"路径长度={len(best.path)}")
+              f"路径长度={len(best.path)} | "
+              f"代数={ga.generation}")
         
-        results.append((f"种群={pop_size}", maze, best))
+        results.append((f"Pop={pop_size}", maze, best, ga.generation))
     
     # 对比可视化
     print("\n生成对比图...")
