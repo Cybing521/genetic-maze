@@ -1,0 +1,52 @@
+# Cursor规则配置
+
+## 文档组织规则
+
+所有Markdown文档应遵循以下规则：
+
+1. **README.md** - 必须放在项目根目录
+2. **其他所有.md文档** - 必须放在 `docs/` 目录下
+   - 包括但不限于：INSTALL.md, QUICKSTART.md, PROJECT_SUMMARY.md, PROJECT_COMPLETION.md等
+
+## 项目结构规则
+
+```
+program2/
+├── README.md              # 项目主文档（根目录）
+├── main.py               # 唯一的启动文件
+├── requirements.txt      # 依赖列表
+├── .gitignore           # Git忽略规则
+├── venv/                # 虚拟环境（不提交到git）
+├── src/                 # 源代码目录
+│   ├── __init__.py
+│   ├── maze.py
+│   ├── genetic_algorithm.py
+│   └── visualizer.py
+└── docs/                # 所有其他文档
+    ├── QUICKSTART.md
+    ├── INSTALL.md
+    ├── PROJECT_SUMMARY.md
+    └── PROJECT_COMPLETION.md
+```
+
+## 代码规则
+
+1. **入口文件**: `main.py` 是唯一的启动文件
+2. **核心模块**: 所有核心代码放在 `src/` 目录
+3. **虚拟环境**: 始终使用虚拟环境，不要提交到git
+4. **导入路径**: 从根目录导入：`from src.module import Class`
+
+## Git规则
+
+1. **虚拟环境**: 不提交venv/, env/, .venv/等目录
+2. **临时文件**: 不提交__pycache__/, *.pyc等
+3. **输出文件**: 不提交*.png, *.jpg等生成的图片
+
+## 编码规范
+
+- 使用UTF-8编码
+- Python 3.7+
+- 遵循PEP 8代码风格
+- 添加类型提示
+- 编写完整的docstring
+
