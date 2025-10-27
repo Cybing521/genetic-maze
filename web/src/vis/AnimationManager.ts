@@ -1,5 +1,5 @@
 // 动画管理器
-import type { GenerationResult } from '../types';
+import type { GenerationResult, Position } from '../types';
 import { GeneticAlgorithm } from '../ga/GeneticAlgorithm';
 import { MazeRenderer } from './MazeRenderer';
 import { FitnessChart } from './FitnessChart';

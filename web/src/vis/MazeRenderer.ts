@@ -68,6 +68,9 @@ export class MazeRenderer {
   private cacheMaze(maze: Maze): void {
     const ctx = this.offscreenCtx;
     
+    // 清空离屏canvas
+    ctx.clearRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
+    
     // 绘制迷宫
     for (let y = 0; y < maze.height; y++) {
       for (let x = 0; x < maze.width; x++) {
@@ -82,8 +85,6 @@ export class MazeRenderer {
         }
       }
     }
-
-    this.mazeCache = ctx.getImageData(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
   }
 
   clear(): void {
@@ -92,11 +93,10 @@ export class MazeRenderer {
   }
 
   renderMaze(): void {
-    if (this.mazeCache && this.maze) {
-      // 居中显示迷宫
-      const x = (this.canvas.width - this.maze.width * this.cellSize) / 2;
-      const y = 80;  // 顶部留空间给HUD
-      this.ctx.putImageData(this.mazeCache, x, y);
+    if (this.maze) {
+      // 居中显示迷宫 - 使用drawImage而不是putImageData
+      const offset = this.getOffset();
+      this.ctx.drawImage(this.offscreenCanvas, offset.x, offset.y);
     }
   }
   
