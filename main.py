@@ -63,13 +63,39 @@ def run_basic(create_animation=False):
         
         # 生成动画
         if create_animation:
-            print("\n【步骤4】生成进化动画...")
-            visualizer.create_evolution_animation(
-                best_individuals_history=ga.best_individuals_history,
-                fitness_history=ga.fitness_history,
-                save_path="evolution.gif",
-                fps=5
-            )
+            if create_animation == 'best':
+                print("\n【步骤4】生成最佳路径演化动画...")
+                visualizer.create_evolution_animation(
+                    best_individuals_history=ga.best_individuals_history,
+                    fitness_history=ga.fitness_history,
+                    save_path="evolution_best.gif",
+                    fps=5
+                )
+            elif create_animation == 'population':
+                print("\n【步骤4】生成种群演化动画（展示多个个体）...")
+                visualizer.create_population_evolution_animation(
+                    population_history=ga.population_history,
+                    fitness_history=ga.fitness_history,
+                    save_path="evolution_population.gif",
+                    fps=5,
+                    show_diversity=True
+                )
+            elif create_animation == 'both':
+                print("\n【步骤4a】生成最佳路径演化动画...")
+                visualizer.create_evolution_animation(
+                    best_individuals_history=ga.best_individuals_history,
+                    fitness_history=ga.fitness_history,
+                    save_path="evolution_best.gif",
+                    fps=5
+                )
+                print("\n【步骤4b】生成种群演化动画...")
+                visualizer.create_population_evolution_animation(
+                    population_history=ga.population_history,
+                    fitness_history=ga.fitness_history,
+                    save_path="evolution_population.gif",
+                    fps=5,
+                    show_diversity=True
+                )
     except Exception as e:
         print(f"⚠ 可视化错误: {e}")
         import traceback
@@ -224,7 +250,9 @@ def main():
         epilog="""
 运行示例:
   python main.py                           # 默认运行基础示例
-  python main.py --animate                 # 运行并生成动画
+  python main.py --animate best            # 生成最佳路径演化动画
+  python main.py --animate population      # 生成种群演化动画（展示多个体）
+  python main.py --animate both            # 生成两种动画
   python main.py --mode test               # 快速测试
   python main.py --mode comparison         # 参数对比
   python main.py --mode custom --width 15 --height 15 --population 150
@@ -235,8 +263,8 @@ def main():
                        choices=['basic', 'test', 'comparison', 'custom'],
                        help='运行模式 (默认: basic)')
     
-    parser.add_argument('--animate', action='store_true',
-                       help='生成进化过程动画 (GIF格式)')
+    parser.add_argument('--animate', type=str, choices=['best', 'population', 'both'],
+                       help='生成进化动画：best=最佳路径, population=种群演化, both=两者都生成')
     
     # 自定义模式参数
     parser.add_argument('--width', type=int, default=21,

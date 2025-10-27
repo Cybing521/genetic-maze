@@ -137,6 +137,7 @@ class GeneticAlgorithm:
         self.generation = 0
         self.fitness_history = []
         self.best_individuals_history = []  # 记录每一代的最佳个体（用于动画）
+        self.population_history = []  # 记录每一代的整个种群（用于群体演化动画）
         
     def initialize_population(self):
         """初始化种群"""
@@ -311,6 +312,15 @@ class GeneticAlgorithm:
         # 创建副本以避免引用问题
         best_copy = Individual(self.maze, self.best_individual.path.copy(), self.max_steps)
         self.best_individuals_history.append(best_copy)
+        
+        # 保存当前代的种群快照（用于群体演化动画）
+        # 只保存前10个优秀个体以节省内存
+        top_individuals = sorted(self.population, key=lambda ind: ind.fitness, reverse=True)[:10]
+        population_snapshot = [
+            Individual(self.maze, ind.path.copy(), self.max_steps) 
+            for ind in top_individuals
+        ]
+        self.population_history.append(population_snapshot)
         
         self.generation += 1
         return self.best_individual

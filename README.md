@@ -4,7 +4,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-v1.3.0-orange.svg)](#版本历史)
+[![Version](https://img.shields.io/badge/Version-v1.4.0-orange.svg)](#版本历史)
 
 ---
 
@@ -95,7 +95,9 @@ python main.py
 python main.py --mode basic
 
 # 生成进化动画（新功能！）
-python main.py --animate
+python main.py --animate best          # 最佳路径演化
+python main.py --animate population    # 种群演化（展示多个体的随机过程）✨
+python main.py --animate both          # 生成两种动画
 ```
 
 你将看到：
@@ -198,18 +200,36 @@ python main.py --mode custom \
 
 生成GIF动画，展示算法每一代的演化过程！
 
+#### 两种动画模式
+
+**1. 最佳路径演化动画** (`--animate best`)
+- 展示每一代的最佳个体路径
+- 适合观察算法收敛过程
+- 文件：`evolution_best.gif`
+
+**2. 种群演化动画** (`--animate population`) ⭐ v1.4.0新增
+- 同时展示前10个优秀个体的路径
+- 体现随机性和种群多样性
+- 显示种群从分散到收敛的过程
+- 包含种群多样性指标图表
+- 文件：`evolution_population.gif`
+
 #### 使用方法
 
 ```bash
-# 运行并生成动画
-python main.py --animate
+# 生成最佳路径动画
+python main.py --animate best
 
-# 动画文件会保存为 evolution.gif
+# 生成种群演化动画（推荐！展示随机无序过程）
+python main.py --animate population
+
+# 生成两种动画
+python main.py --animate both
 ```
 
 #### 动画内容
 
-动画包含两部分内容：
+**最佳路径动画** (`evolution_best.gif`)：
 
 **左侧**：迷宫和最佳路径
 - 实时显示每一代的最佳路径
@@ -223,8 +243,29 @@ python main.py --animate
 - 红色圆点：当前代的适应度位置
 - 实时显示算法收敛过程
 
+---
+
+**种群演化动画** (`evolution_population.gif`) ⭐ 新增：
+
+**左侧**：迷宫和多条路径（前10名个体）
+- 🌈 同时显示10个个体的路径
+- 颜色越亮表示适应度越高
+- 透明度表示排名（第1名最不透明）
+- 最佳路径用粗线高亮显示
+- 体现种群的**随机性和无序性**
+
+**右上**：适应度演化曲线
+- 最佳适应度和平均适应度
+- 实时动态绘制
+
+**右下**：种群多样性指标
+- 显示适应度的标准差
+- 反映种群的分散程度
+- 观察从**多样性→收敛**的过程
+
 #### 代码示例
 
+**最佳路径动画**：
 ```python
 from src.maze import Maze
 from src.genetic_algorithm import GeneticAlgorithm
@@ -232,18 +273,27 @@ from src.visualizer import MazeVisualizer
 
 maze = Maze(21, 21)
 maze.generate_maze()
-
 ga = GeneticAlgorithm(maze, population_size=100, max_generations=200)
 best = ga.run()
 
-# 生成动画
 viz = MazeVisualizer(maze)
 viz.create_evolution_animation(
     best_individuals_history=ga.best_individuals_history,
     fitness_history=ga.fitness_history,
-    save_path="my_evolution.gif",  # 输出文件名
-    fps=5,                          # 帧率
-    interval_ms=200                 # 每帧间隔（毫秒）
+    save_path="best_evolution.gif",
+    fps=5
+)
+```
+
+**种群演化动画** ⭐ 新增：
+```python
+# 同样的设置，但使用种群历史
+viz.create_population_evolution_animation(
+    population_history=ga.population_history,
+    fitness_history=ga.fitness_history,
+    save_path="population_evolution.gif",
+    fps=5,
+    show_diversity=True  # 显示多样性指标
 )
 ```
 
@@ -827,6 +877,27 @@ class MultiTargetMaze(Maze):
 
 ## 版本历史
 
+### v1.4.0 (2025-10-27)
+- 🎬 **重大更新**: 种群演化动画
+  - 新增`create_population_evolution_animation()`方法
+  - 同时展示前10个个体的路径演化
+  - **体现随机性和无序的演化过程**
+  - 显示种群多样性指标（标准差）
+  - 三面板布局：迷宫+适应度+多样性
+- 🔧 **算法增强**:
+  - 在`GeneticAlgorithm`中新增`population_history`
+  - 每代保存前10个优秀个体的快照
+- 💻 **命令行改进**:
+  - `--animate`参数支持三种模式：
+    - `best`: 最佳路径演化
+    - `population`: 种群演化（新增）
+    - `both`: 生成两种动画
+- 🎨 **视觉改进**:
+  - 多路径颜色方案（viridis配色）
+  - 透明度表示个体排名
+  - 粗线高亮最佳路径
+  - 实时显示种群规模信息
+
 ### v1.3.0 (2025-10-27)
 - 🎬 **新功能**: 进化动画生成
   - 添加`create_evolution_animation()`方法
@@ -910,7 +981,7 @@ MIT License - 详见LICENSE文件
 ## 联系方式
 
 - **项目**: Maze GA Project
-- **当前版本**: v1.3.0
+- **当前版本**: v1.4.0
 - **最后更新**: 2025-10-27
 
 ---
