@@ -61,8 +61,8 @@ output/
 *.tmp
 *.bak
 
-# 内部文档（不提交到git）
-docs/
+# 内部文档 - 根据新规则，docs目录必须提交到git
+# docs/  # 已注释：文档是项目重要组成部分
 
 # Web项目依赖和构建产物
 web/node_modules/
