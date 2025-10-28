@@ -10,6 +10,12 @@ export interface MazeData {
   end: Position;
 }
 
+// 算子类型
+export type SelectionMethod = 'tournament' | 'roulette' | 'rank' | 'sus';
+export type CrossoverMethod = 'single-point' | 'two-point' | 'uniform' | 'order' | 'pmx';
+export type MutationMethod = 'random' | 'guided' | 'inversion' | 'insertion' | 'local-search';
+export type AlgorithmType = 'standard' | 'adaptive' | 'hybrid' | 'island';
+
 export interface GAConfig {
   populationSize: number;
   maxGenerations: number;

@@ -2,12 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { Maze } from './maze/Maze';
 import { GeneticAlgorithm } from './ga/GeneticAlgorithm';
 import { AdaptiveGeneticAlgorithm } from './ga/AdaptiveGA';
+import { HybridGA, createHybridGAConfig } from './ga/HybridGA';
 import { DetailedGeneticAlgorithm } from './ga/DetailedGA';
 import { MazeRenderer } from './vis/MazeRenderer';
 import { AnimationManager } from './vis/AnimationManager';
 import { FitnessChart } from './vis/FitnessChart';
+import { FitnessLandscape3D } from './vis/FitnessLandscape3D';
+import { StatisticsPanel } from './ui/StatisticsPanel';
 import { WebMRecorder } from './utils/recorder';
-import type { GAConfig, GenerationResult } from './types';
+import { DataExporter, type ExperimentData } from './utils/DataExporter';
+import type { GAConfig, GenerationResult, AlgorithmType, SelectionMethod, CrossoverMethod, MutationMethod } from './types';
 import './App.css';
 
 function App() {
@@ -34,6 +38,18 @@ function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [currentGen, setCurrentGen] = useState<GenerationResult | null>(null);
   const [fps, setFps] = useState<number>(60);
+
+  // 新增：算法和算子选择
+  const [algorithmType, setAlgorithmType] = useState<AlgorithmType>('hybrid');
+  const [selectionMethod, setSelectionMethod] = useState<SelectionMethod>('tournament');
+  const [crossoverMethod, setCrossoverMethod] = useState<CrossoverMethod>('order');
+  const [mutationMethod, setMutationMethod] = useState<MutationMethod>('guided');
+
+  // 新增：3D可视化和数据导出
+  const [show3D, setShow3D] = useState(false);
+  const [showStats, setShowStats] = useState(true);
+  const [historyData, setHistoryData] = useState<GenerationResult[]>([]);
+  const [startTimeRef, setStartTimeRef] = useState<number>(Date.now());
 
   const mazeRef = useRef<Maze | null>(null);
   const animManagerRef = useRef<AnimationManager | null>(null);
@@ -66,6 +82,7 @@ function App() {
       fitnessChart,
       (result) => {
         setCurrentGen(result);
+        setHistoryData(prev => [...prev, result]);
         // 更新FPS显示
         if (animManager.fps) {
           setFps(animManager.fps);
@@ -104,15 +121,39 @@ function App() {
 
     setIsRunning(true);
     setIsPaused(false);
+    setHistoryData([]);
+    setStartTimeRef(Date.now());
 
     if (showDetailedProcess) {
       // 使用详细展示版本
       const ga = new DetailedGeneticAlgorithm(mazeRef.current, config);
       await animManagerRef.current.startDetailed(ga, setProcessMessage);
     } else {
-      // 使用快速版本
-      const GA = config.useAdaptive ? AdaptiveGeneticAlgorithm : GeneticAlgorithm;
-      const ga = new GA(mazeRef.current, config);
+      // 根据选择的算法类型创建GA实例
+      let ga;
+      
+      switch (algorithmType) {
+        case 'standard':
+          ga = new GeneticAlgorithm(mazeRef.current, config);
+          break;
+        case 'adaptive':
+          ga = new AdaptiveGeneticAlgorithm(mazeRef.current, config);
+          break;
+        case 'hybrid':
+          const hybridConfig = createHybridGAConfig(config);
+          hybridConfig.selectionMethod = selectionMethod;
+          hybridConfig.crossoverMethod = crossoverMethod;
+          hybridConfig.mutationMethod = mutationMethod;
+          ga = new HybridGA(mazeRef.current, hybridConfig);
+          break;
+        case 'island':
+          // TODO: 岛屿模型需要特殊处理
+          ga = new AdaptiveGeneticAlgorithm(mazeRef.current, config);
+          break;
+        default:
+          ga = new GeneticAlgorithm(mazeRef.current, config);
+      }
+      
       await animManagerRef.current.start(ga);
     }
     
@@ -190,8 +231,62 @@ function App() {
     setIsRecording(false);
   };
 
+  const handleExportJSON = () => {
+    if (historyData.length === 0 || !currentGen) return;
+    
+    const experimentData: ExperimentData = {
+      config,
+      algorithmType,
+      mazeSize,
+      startTime: startTimeRef,
+      endTime: Date.now(),
+      totalGenerations: historyData.length,
+      history: historyData,
+      finalBestPath: currentGen.best,
+      statistics: DataExporter.calculateStatistics(historyData, config, startTimeRef, Date.now())
+    };
+
+    DataExporter.exportJSON(experimentData);
+  };
+
+  const handleExportCSV = () => {
+    if (historyData.length === 0) return;
+    DataExporter.exportCSV(historyData);
+  };
+
+  const handleExportReport = () => {
+    if (historyData.length === 0 || !currentGen) return;
+    
+    const experimentData: ExperimentData = {
+      config,
+      algorithmType,
+      mazeSize,
+      startTime: startTimeRef,
+      endTime: Date.now(),
+      totalGenerations: historyData.length,
+      history: historyData,
+      finalBestPath: currentGen.best,
+      statistics: DataExporter.calculateStatistics(historyData, config, startTimeRef, Date.now())
+    };
+
+    DataExporter.exportMarkdownReport(experimentData);
+  };
+
+  const handleExportPath = () => {
+    if (!currentGen) return;
+    DataExporter.exportBestPath(currentGen.best.path, currentGen.generation);
+  };
+
   return (
     <div className="app">
+      {/* 3D可视化覆盖层 */}
+      {show3D && historyData.length > 0 && (
+        <FitnessLandscape3D 
+          history={historyData} 
+          onClose={() => setShow3D(false)}
+        />
+      )}
+
       {/* HUD */}
       <div className="hud">
         <div className="hud-left">
@@ -283,7 +378,107 @@ function App() {
 
         {/* 控制面板 */}
         <div className="control-panel">
-          <h3>Parameters</h3>
+          <h3>Algorithm Configuration</h3>
+          
+          <div className="control-group">
+            <label>Algorithm Type</label>
+            <select 
+              value={algorithmType} 
+              onChange={(e) => setAlgorithmType(e.target.value as AlgorithmType)}
+              disabled={isRunning}
+              style={{
+                width: '100%',
+                padding: '8px',
+                borderRadius: '4px',
+                background: 'var(--nord0)',
+                color: 'var(--nord5)',
+                border: '1px solid var(--nord3)',
+                fontSize: '13px'
+              }}
+            >
+              <option value="standard">Standard GA</option>
+              <option value="adaptive">Adaptive GA</option>
+              <option value="hybrid">Hybrid GA ⭐</option>
+              <option value="island">Island GA (Experimental)</option>
+            </select>
+          </div>
+
+          {algorithmType === 'hybrid' && (
+            <>
+              <div className="control-group">
+                <label>Selection Method</label>
+                <select 
+                  value={selectionMethod} 
+                  onChange={(e) => setSelectionMethod(e.target.value as SelectionMethod)}
+                  disabled={isRunning}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    background: 'var(--nord0)',
+                    color: 'var(--nord5)',
+                    border: '1px solid var(--nord3)',
+                    fontSize: '13px'
+                  }}
+                >
+                  <option value="tournament">Tournament</option>
+                  <option value="roulette">Roulette Wheel</option>
+                  <option value="rank">Rank Selection</option>
+                  <option value="sus">Stochastic Universal Sampling</option>
+                </select>
+              </div>
+
+              <div className="control-group">
+                <label>Crossover Method</label>
+                <select 
+                  value={crossoverMethod} 
+                  onChange={(e) => setCrossoverMethod(e.target.value as CrossoverMethod)}
+                  disabled={isRunning}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    background: 'var(--nord0)',
+                    color: 'var(--nord5)',
+                    border: '1px solid var(--nord3)',
+                    fontSize: '13px'
+                  }}
+                >
+                  <option value="single-point">Single-Point</option>
+                  <option value="two-point">Two-Point</option>
+                  <option value="uniform">Uniform</option>
+                  <option value="order">Order Crossover (OX) ⭐</option>
+                  <option value="pmx">Partially Mapped (PMX)</option>
+                </select>
+              </div>
+
+              <div className="control-group">
+                <label>Mutation Method</label>
+                <select 
+                  value={mutationMethod} 
+                  onChange={(e) => setMutationMethod(e.target.value as MutationMethod)}
+                  disabled={isRunning}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    background: 'var(--nord0)',
+                    color: 'var(--nord5)',
+                    border: '1px solid var(--nord3)',
+                    fontSize: '13px'
+                  }}
+                >
+                  <option value="random">Random</option>
+                  <option value="guided">Guided (Heuristic) ⭐</option>
+                  <option value="inversion">Inversion</option>
+                  <option value="insertion">Insertion (Loop Removal)</option>
+                  <option value="local-search">Local Search (2-opt)</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          <h3 style={{ marginTop: '20px' }}>Maze Settings</h3>
           
           <div className="control-group">
             <label>Maze Size: {mazeSize}×{mazeSize}</label>
@@ -443,9 +638,80 @@ function App() {
             )}
           </div>
 
+          <h3 style={{ marginTop: '20px' }}>Visualization & Export</h3>
+
+          <div className="button-group">
+            <button
+              onClick={() => setShow3D(true)}
+              disabled={historyData.length < 2}
+              className="btn-secondary"
+              style={{
+                background: historyData.length < 2 ? 'var(--nord3)' : 'var(--nord10)',
+                cursor: historyData.length < 2 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              🌐 3D Landscape
+            </button>
+            
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className="btn-secondary"
+            >
+              {showStats ? '📊 Hide Stats' : '📊 Show Stats'}
+            </button>
+          </div>
+
+          <div className="button-group">
+            <button
+              onClick={handleExportJSON}
+              disabled={historyData.length === 0}
+              className="btn-secondary"
+              style={{ fontSize: '13px' }}
+            >
+              📥 Export JSON
+            </button>
+            
+            <button
+              onClick={handleExportCSV}
+              disabled={historyData.length === 0}
+              className="btn-secondary"
+              style={{ fontSize: '13px' }}
+            >
+              📊 Export CSV
+            </button>
+          </div>
+
+          <div className="button-group">
+            <button
+              onClick={handleExportReport}
+              disabled={historyData.length === 0}
+              className="btn-secondary"
+              style={{ fontSize: '13px' }}
+            >
+              📄 Export Report
+            </button>
+            
+            <button
+              onClick={handleExportPath}
+              disabled={!currentGen}
+              className="btn-secondary"
+              style={{ fontSize: '13px' }}
+            >
+              🛤️ Export Path
+            </button>
+          </div>
+
           <div className="info-panel">
             <h4>Algorithm Info</h4>
-            <p>Type: {config.useAdaptive ? 'Adaptive GA' : 'Standard GA'}</p>
+            <p>Type: {algorithmType.charAt(0).toUpperCase() + algorithmType.slice(1)} GA</p>
+            {algorithmType === 'hybrid' && (
+              <>
+                <p>Selection: {selectionMethod}</p>
+                <p>Crossover: {crossoverMethod}</p>
+                <p>Mutation: {mutationMethod}</p>
+                <p>A* Init: 15%</p>
+              </>
+            )}
             <p>Population: {config.populationSize} individuals</p>
             <p>Elitism: {config.elitismCount} ({((config.elitismCount/config.populationSize)*100).toFixed(1)}%)</p>
             <p>Max Steps: {config.maxSteps}</p>
@@ -464,6 +730,15 @@ function App() {
               disabled={isRunning}
             />
           </div>
+
+          {/* 统计面板 */}
+          {showStats && (
+            <StatisticsPanel 
+              history={historyData}
+              startTime={startTimeRef}
+              isRunning={isRunning}
+            />
+          )}
         </div>
       </div>
     </div>
