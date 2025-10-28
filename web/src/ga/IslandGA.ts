@@ -241,7 +241,7 @@ export class IslandGA {
   /**
    * 从源岛屿迁移个体到目标岛屿
    */
-  private async migrate(source: IslandState, target: IslandState, size: number): Promise<void> {
+  private async migrate(source: IslandState, target: IslandState, _size: number): Promise<void> {
     if (!source.bestIndividual) return;
 
     // 发送最优个体

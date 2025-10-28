@@ -67,6 +67,7 @@ export class FitnessFunction {
    * 路径长度评分
    */
   private static calculatePathLength(pathLength: number, maxSteps: number): number {
+    // maze参数暂未使用，预留用于未来增强
     // 鼓励适中的路径长度
     const ratio = pathLength / maxSteps;
     if (ratio < 0.3) {
@@ -93,7 +94,7 @@ export class FitnessFunction {
   /**
    * 平滑度评分：奖励直线路径，惩罚频繁转向
    */
-  private static calculateSmoothness(path: Position[], maze: Maze): number {
+  private static calculateSmoothness(path: Position[], _maze: Maze): number {
     if (path.length < 3) return 0;
 
     let directionChanges = 0;

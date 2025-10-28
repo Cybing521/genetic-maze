@@ -9,9 +9,12 @@ import { AnimationManager } from './vis/AnimationManager';
 import { FitnessChart } from './vis/FitnessChart';
 import { FitnessLandscape3D } from './vis/FitnessLandscape3D';
 import { StatisticsPanel } from './ui/StatisticsPanel';
+import { IslandControlPanel } from './ui/IslandControlPanel';
+import { IslandVisualizer } from './ui/IslandVisualizer';
+import { IslandGA, createDefaultIslandConfig } from './ga/IslandGA';
 import { WebMRecorder } from './utils/recorder';
 import { DataExporter, type ExperimentData } from './utils/DataExporter';
-import type { GAConfig, GenerationResult, AlgorithmType, SelectionMethod, CrossoverMethod, MutationMethod } from './types';
+import type { GAConfig, GenerationResult, AlgorithmType, SelectionMethod, CrossoverMethod, MutationMethod, IslandConfig } from './types';
 import './App.css';
 
 function App() {
@@ -50,6 +53,11 @@ function App() {
   const [showStats, setShowStats] = useState(true);
   const [historyData, setHistoryData] = useState<GenerationResult[]>([]);
   const [startTimeRef, setStartTimeRef] = useState<number>(Date.now());
+
+  // Island GA配置和状态
+  const [islandConfig, setIslandConfig] = useState<IslandConfig>(createDefaultIslandConfig());
+  const [islandResults, setIslandResults] = useState<GenerationResult[]>([]);
+  const [islandGA, setIslandGA] = useState<IslandGA | null>(null);
 
   const mazeRef = useRef<Maze | null>(null);
   const animManagerRef = useRef<AnimationManager | null>(null);
@@ -147,9 +155,33 @@ function App() {
           ga = new HybridGA(mazeRef.current, hybridConfig);
           break;
         case 'island':
-          // TODO: 岛屿模型需要特殊处理
-          ga = new AdaptiveGeneticAlgorithm(mazeRef.current, config);
-          break;
+          // Island GA特殊处理：使用Web Workers并行
+          const island = new IslandGA(
+            mazeRef.current, 
+            config, 
+            islandConfig,
+            (results) => {
+              setIslandResults(results);
+              // 更新主显示为全局最优
+              if (results.length > 0) {
+                const globalBest = results.reduce((best, r) => 
+                  r.bestFitness > best.bestFitness ? r : best
+                , results[0]);
+                setCurrentGen(globalBest);
+                setHistoryData(prev => [...prev, globalBest]);
+              }
+            }
+          );
+          setIslandGA(island);
+          
+          // 初始化并运行
+          await island.initialize();
+          await island.start();
+          
+          // 清理
+          island.destroy();
+          setIslandGA(null);
+          return; // Island GA自己管理流程，直接返回
         default:
           ga = new GeneticAlgorithm(mazeRef.current, config);
       }
@@ -179,10 +211,18 @@ function App() {
       animManagerRef.current.reset();
       animManagerRef.current.pathTrails = [];  // 清空轨迹
     }
+    
+    // 停止Island GA（如果正在运行）
+    if (islandGA) {
+      islandGA.destroy();
+      setIslandGA(null);
+    }
+    
     setIsRunning(false);
     setIsPaused(false);
     setCurrentGen(null);
     setFps(60);
+    setIslandResults([]);
 
     // 重新生成迷宫 - 使用当前的mazeSize
     if (canvasRef.current && chartCanvasRef.current) {
@@ -478,6 +518,14 @@ function App() {
             </>
           )}
 
+          {algorithmType === 'island' && (
+            <IslandControlPanel
+              config={islandConfig}
+              onChange={setIslandConfig}
+              disabled={isRunning}
+            />
+          )}
+
           <h3 style={{ marginTop: '20px' }}>Maze Settings</h3>
           
           <div className="control-group">
@@ -712,11 +760,24 @@ function App() {
                 <p>A* Init: 15%</p>
               </>
             )}
+            {algorithmType === 'island' && (
+              <>
+                <p>Islands: {islandConfig.numIslands}</p>
+                <p>Migration: Every {islandConfig.migrationInterval} gen</p>
+                <p>Topology: {islandConfig.migrationTopology}</p>
+                <p>Pop/Island: ~{Math.floor(config.populationSize / islandConfig.numIslands)}</p>
+              </>
+            )}
             <p>Population: {config.populationSize} individuals</p>
             <p>Elitism: {config.elitismCount} ({((config.elitismCount/config.populationSize)*100).toFixed(1)}%)</p>
             <p>Max Steps: {config.maxSteps}</p>
             <p>Max Generations: {config.maxGenerations}</p>
           </div>
+
+          {/* Island GA状态可视化 */}
+          {algorithmType === 'island' && islandResults.length > 0 && (
+            <IslandVisualizer islands={islandResults} />
+          )}
           
           <div className="control-group">
             <label>Max Generations: {config.maxGenerations}</label>

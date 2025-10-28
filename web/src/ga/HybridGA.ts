@@ -1,10 +1,14 @@
 // 混合遗传算法 - 集成所有新算子
 import { GeneticAlgorithm } from './GeneticAlgorithm';
 import { Individual } from './Individual';
-import { SelectionOperators, SelectionMethod } from './operators/SelectionOperators';
-import { CrossoverOperators, CrossoverMethod } from './operators/CrossoverOperators';
-import { MutationOperators, MutationMethod } from './operators/MutationOperators';
-import { FitnessFunction, FitnessWeights, FITNESS_PRESETS } from './fitness/FitnessFunction';
+import { SelectionOperators } from './operators/SelectionOperators';
+import { CrossoverOperators } from './operators/CrossoverOperators';
+import { MutationOperators } from './operators/MutationOperators';
+import { FitnessFunction, FITNESS_PRESETS } from './fitness/FitnessFunction';
+import type { SelectionMethod } from './operators/SelectionOperators';
+import type { CrossoverMethod } from './operators/CrossoverOperators';
+import type { MutationMethod } from './operators/MutationOperators';
+import type { FitnessWeights } from './fitness/FitnessFunction';
 import { AStar } from '../algorithms/AStar';
 import type { GAConfig } from '../types';
 import { Maze } from '../maze/Maze';

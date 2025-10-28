@@ -16,6 +16,14 @@ export type CrossoverMethod = 'single-point' | 'two-point' | 'uniform' | 'order'
 export type MutationMethod = 'random' | 'guided' | 'inversion' | 'insertion' | 'local-search';
 export type AlgorithmType = 'standard' | 'adaptive' | 'hybrid' | 'island';
 
+// Island GA类型
+export interface IslandConfig {
+  numIslands: number;
+  migrationInterval: number;
+  migrationSize: number;
+  migrationTopology: 'ring' | 'star' | 'full';
+}
+
 export interface GAConfig {
   populationSize: number;
   maxGenerations: number;

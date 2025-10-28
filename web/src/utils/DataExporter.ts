@@ -44,7 +44,7 @@ export class DataExporter {
    */
   static calculateStatistics(
     history: GenerationResult[],
-    config: GAConfig,
+    _config: GAConfig,
     startTime: number,
     endTime: number
   ): ExperimentStatistics {

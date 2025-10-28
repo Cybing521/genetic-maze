@@ -84,7 +84,7 @@ export class CrossoverOperators {
     repairFn: (path: Position[]) => Position[]
   ): [Individual, Individual] {
     const minLen = Math.min(parent1.path.length, parent2.path.length);
-    const maxLen = Math.max(parent1.path.length, parent2.path.length);
+    // const maxLen = Math.max(parent1.path.length, parent2.path.length); // 暂未使用
     
     const child1Path: Position[] = [];
     const child2Path: Position[] = [];
@@ -126,6 +126,7 @@ export class CrossoverOperators {
     const len1 = parent1.path.length;
     const len2 = parent2.path.length;
     const minLen = Math.min(len1, len2);
+    // const maxLen = Math.max(len1, len2); // 暂未使用
     
     if (minLen <= 2) {
       return [parent1.clone(), parent2.clone()];

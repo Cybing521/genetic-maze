@@ -147,7 +147,7 @@ export function FitnessLandscape3D({
     
     for (let i = 0; i < vertices.length; i += 3) {
       const x = vertices[i];
-      const y = vertices[i + 1];
+      // const y = vertices[i + 1]; // y未使用
       
       // 计算在历史中的索引
       const xIndex = Math.floor(((x + 20) / 40) * segments);
