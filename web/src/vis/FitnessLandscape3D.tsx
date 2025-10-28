@@ -2,19 +2,22 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import type { GenerationResult } from '../types';
+import type { Translations } from '../i18n/translations';
 
 interface FitnessLandscape3DProps {
   history: GenerationResult[];
   width?: number;
   height?: number;
   onClose?: () => void;
+  t: Translations;
 }
 
 export function FitnessLandscape3D({ 
   history, 
   width = 800, 
   height = 600,
-  onClose 
+  onClose,
+  t
 }: FitnessLandscape3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -228,7 +231,7 @@ export function FitnessLandscape3D({
         fontSize: '24px',
         fontWeight: 600
       }}>
-        Fitness Landscape 3D
+        {t.fitnessLandscape3D}
       </div>
       
       <div 
@@ -246,7 +249,7 @@ export function FitnessLandscape3D({
         fontSize: '14px',
         textAlign: 'center'
       }}>
-        🖱️ Drag to rotate | 🔄 Scroll to zoom | ESC to close
+        🖱️ {t.dragToRotate} | 🔄 {t.scrollToZoom} | ESC {t.escToClose}
       </div>
 
       <button
@@ -263,7 +266,7 @@ export function FitnessLandscape3D({
           cursor: 'pointer'
         }}
       >
-        Close
+        {t.close}
       </button>
     </div>
   );

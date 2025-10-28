@@ -1,11 +1,13 @@
 // Island GA 可视化 - 显示多个岛屿的状态
 import type { GenerationResult } from '../types';
+import type { Translations } from '../i18n/translations';
 
 interface IslandVisualizerProps {
   islands: GenerationResult[];
+  t: Translations;
 }
 
-export function IslandVisualizer({ islands }: IslandVisualizerProps) {
+export function IslandVisualizer({ islands, t }: IslandVisualizerProps) {
   if (islands.length === 0) return null;
 
   const globalBest = islands.reduce((best, island) => 
@@ -27,13 +29,13 @@ export function IslandVisualizer({ islands }: IslandVisualizerProps) {
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <span>🏝️ Island Status</span>
+        <span>🏝️ {t.islandStatus}</span>
         <span style={{ 
           fontSize: '11px', 
           color: 'var(--nord13)',
           fontWeight: 'normal'
         }}>
-          {islands.length} islands active
+          {islands.length} {t.islandsActive}
         </span>
       </h4>
 
@@ -75,7 +77,7 @@ export function IslandVisualizer({ islands }: IslandVisualizerProps) {
               color: 'var(--nord8)',
               marginBottom: '8px'
             }}>
-              Island #{idx + 1}
+              {t.island} #{idx + 1}
             </div>
 
             <div style={{ fontSize: '10px', color: 'var(--nord5)' }}>
@@ -84,7 +86,7 @@ export function IslandVisualizer({ islands }: IslandVisualizerProps) {
                 justifyContent: 'space-between',
                 marginBottom: '4px'
               }}>
-                <span>Generation:</span>
+                <span>{t.generation}:</span>
                 <span style={{ fontWeight: 600, color: 'var(--nord8)' }}>
                   {island.generation}
                 </span>
@@ -95,7 +97,7 @@ export function IslandVisualizer({ islands }: IslandVisualizerProps) {
                 justifyContent: 'space-between',
                 marginBottom: '4px'
               }}>
-                <span>Best Fitness:</span>
+                <span>{t.bestFitness}:</span>
                 <span style={{ 
                   fontWeight: 600, 
                   color: island.best.reachedEnd ? 'var(--nord14)' : 'var(--nord8)'
@@ -110,7 +112,7 @@ export function IslandVisualizer({ islands }: IslandVisualizerProps) {
                 justifyContent: 'space-between',
                 marginBottom: '4px'
               }}>
-                <span>Avg Fitness:</span>
+                <span>{t.avgFitness}:</span>
                 <span style={{ fontWeight: 600, color: 'var(--nord8)' }}>
                   {island.avgFitness.toFixed(0)}
                 </span>
@@ -120,7 +122,7 @@ export function IslandVisualizer({ islands }: IslandVisualizerProps) {
                 display: 'flex', 
                 justifyContent: 'space-between'
               }}>
-                <span>Diversity:</span>
+                <span>{t.diversity}:</span>
                 <span style={{ 
                   fontWeight: 600, 
                   color: island.diversity > 50 ? 'var(--nord13)' : 
@@ -153,18 +155,18 @@ export function IslandVisualizer({ islands }: IslandVisualizerProps) {
         borderLeft: '3px solid var(--nord14)'
       }}>
         <div style={{ fontWeight: 600, color: 'var(--nord14)', marginBottom: '5px' }}>
-          🏆 Global Best
+          🏆 {t.globalBest}
         </div>
         <div style={{ color: 'var(--nord5)' }}>
-          <span>Island #{islands.indexOf(globalBest) + 1}</span>
+          <span>{t.island} #{islands.indexOf(globalBest) + 1}</span>
           <span style={{ margin: '0 8px' }}>•</span>
-          <span>Fitness: {globalBest.bestFitness.toFixed(0)}</span>
+          <span>{t.bestFitness}: {globalBest.bestFitness.toFixed(0)}</span>
           <span style={{ margin: '0 8px' }}>•</span>
-          <span>Gen: {globalBest.generation}</span>
+          <span>{t.generation}: {globalBest.generation}</span>
           {globalBest.best.reachedEnd && (
             <>
               <span style={{ margin: '0 8px' }}>•</span>
-              <span style={{ color: 'var(--nord14)', fontWeight: 600 }}>SOLVED ✓</span>
+              <span style={{ color: 'var(--nord14)', fontWeight: 600 }}>{t.solved} ✓</span>
             </>
           )}
         </div>

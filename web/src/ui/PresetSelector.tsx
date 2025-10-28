@@ -1,12 +1,14 @@
 // 参数预设选择器
 import { PARAMETER_PRESETS, type PresetConfig } from '../config/presets';
+import type { Translations } from '../i18n/translations';
 
 interface PresetSelectorProps {
   onSelectPreset: (presetName: string) => void;
   disabled?: boolean;
+  t: Translations;
 }
 
-export function PresetSelector({ onSelectPreset, disabled = false }: PresetSelectorProps) {
+export function PresetSelector({ onSelectPreset, disabled = false, t }: PresetSelectorProps) {
   const presets = Object.values(PARAMETER_PRESETS);
 
   return (
@@ -18,7 +20,7 @@ export function PresetSelector({ onSelectPreset, disabled = false }: PresetSelec
         color: 'var(--nord5)',
         fontWeight: 600
       }}>
-        Parameter Presets
+        {t.parameterPresets}
       </label>
 
       <div style={{
@@ -76,7 +78,7 @@ export function PresetSelector({ onSelectPreset, disabled = false }: PresetSelec
         color: 'var(--nord4)',
         textAlign: 'center'
       }}>
-        Click a preset to load optimized parameters
+        {t.clickPreset}
       </div>
     </div>
   );

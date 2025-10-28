@@ -1,13 +1,15 @@
 // Island GA 配置面板
 import type { IslandConfig } from '../ga/IslandGA';
+import type { Translations } from '../i18n/translations';
 
 interface IslandControlPanelProps {
   config: IslandConfig;
   onChange: (config: IslandConfig) => void;
   disabled?: boolean;
+  t: Translations;
 }
 
-export function IslandControlPanel({ config, onChange, disabled = false }: IslandControlPanelProps) {
+export function IslandControlPanel({ config, onChange, disabled = false, t }: IslandControlPanelProps) {
   const handleChange = (key: keyof IslandConfig, value: any) => {
     onChange({ ...config, [key]: value });
   };
@@ -16,13 +18,13 @@ export function IslandControlPanel({ config, onChange, disabled = false }: Islan
     <div style={{ marginTop: '10px' }}>
       <div className="control-group">
         <label>
-          Number of Islands: {config.numIslands}
+          {t.islands}: {config.numIslands}
           <span style={{ 
             fontSize: '10px', 
             color: 'var(--nord13)', 
             marginLeft: '5px' 
           }}>
-            ({navigator.hardwareConcurrency || 4} cores available)
+            ({navigator.hardwareConcurrency || 4} {t.coresAvailable})
           </span>
         </label>
         <input
@@ -37,7 +39,7 @@ export function IslandControlPanel({ config, onChange, disabled = false }: Islan
       </div>
 
       <div className="control-group">
-        <label>Migration Interval: {config.migrationInterval} generations</label>
+        <label>{t.migrationInterval}: {config.migrationInterval} {t.generations}</label>
         <input
           type="range"
           min="5"
@@ -50,7 +52,7 @@ export function IslandControlPanel({ config, onChange, disabled = false }: Islan
       </div>
 
       <div className="control-group">
-        <label>Migration Size: {config.migrationSize} individual(s)</label>
+        <label>{t.migrationSize}: {config.migrationSize} {t.individuals}</label>
         <input
           type="range"
           min="1"
@@ -63,7 +65,7 @@ export function IslandControlPanel({ config, onChange, disabled = false }: Islan
       </div>
 
       <div className="control-group">
-        <label>Migration Topology</label>
+        <label>{t.migrationTopology}</label>
         <select
           value={config.migrationTopology}
           onChange={(e) => handleChange('migrationTopology', e.target.value)}
@@ -78,9 +80,9 @@ export function IslandControlPanel({ config, onChange, disabled = false }: Islan
             fontSize: '13px'
           }}
         >
-          <option value="ring">Ring (环形) - 顺序迁移</option>
-          <option value="star">Star (星形) - 与最优岛交换</option>
-          <option value="full">Full (全连接) - 两两交换</option>
+          <option value="ring">{t.ring}</option>
+          <option value="star">{t.star}</option>
+          <option value="full">{t.full}</option>
         </select>
       </div>
 
@@ -94,12 +96,12 @@ export function IslandControlPanel({ config, onChange, disabled = false }: Islan
         color: 'var(--nord4)'
       }}>
         <div style={{ fontWeight: 600, marginBottom: '5px', color: 'var(--nord14)' }}>
-          ℹ️ Island Model Info
+          ℹ️ {t.islandModelInfo}
         </div>
-        <div>• {config.numIslands} parallel populations</div>
-        <div>• ~{Math.floor(300 / config.numIslands)} individuals/island</div>
-        <div>• Migration every {config.migrationInterval} generations</div>
-        <div>• Expected speedup: {config.numIslands >= 4 ? '2-3x' : config.numIslands >= 2 ? '1.5-2x' : '1x'}</div>
+        <div>• {config.numIslands} {t.parallelPopulations}</div>
+        <div>• ~{Math.floor(300 / config.numIslands)} {t.individualsPerIsland}</div>
+        <div>• {t.migrationEvery} {config.migrationInterval} {t.generations}</div>
+        <div>• {t.expectedSpeedup}: {config.numIslands >= 4 ? '2-3x' : config.numIslands >= 2 ? '1.5-2x' : '1x'}</div>
       </div>
     </div>
   );

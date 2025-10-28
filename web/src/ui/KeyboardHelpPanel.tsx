@@ -1,18 +1,21 @@
 // 键盘快捷键帮助面板
+import type { Translations } from '../i18n/translations';
+
 interface KeyboardHelpPanelProps {
   onClose: () => void;
+  t: Translations;
 }
 
-export function KeyboardHelpPanel({ onClose }: KeyboardHelpPanelProps) {
+export function KeyboardHelpPanel({ onClose, t }: KeyboardHelpPanelProps) {
   const shortcuts = [
-    { key: 'Space', action: 'Play / Pause', category: 'Control' },
-    { key: 'R', action: 'Reset maze and algorithm', category: 'Control' },
-    { key: 'S', action: 'Single step (next generation)', category: 'Control' },
-    { key: 'E', action: 'Export JSON data', category: 'Data' },
-    { key: 'H', action: 'Show/Hide this help panel', category: 'UI' },
-    { key: 'F', action: 'Toggle fullscreen', category: 'UI' },
-    { key: 'Esc', action: 'Close dialogs', category: 'UI' },
-    { key: '1-9', action: 'Set animation speed (1=slow, 9=fast)', category: 'Control' },
+    { key: 'Space', action: t.playPause, category: t.control },
+    { key: 'R', action: t.resetMaze, category: t.control },
+    { key: 'S', action: t.singleStep, category: t.control },
+    { key: 'E', action: t.exportData, category: t.data },
+    { key: 'H', action: t.showHideHelp, category: t.ui },
+    { key: 'F', action: t.toggleFullscreen, category: t.ui },
+    { key: 'Esc', action: t.closeDialogs, category: t.ui },
+    { key: '1-9', action: t.setSpeed, category: t.control },
   ];
 
   const categories = Array.from(new Set(shortcuts.map(s => s.category)));
@@ -58,7 +61,7 @@ export function KeyboardHelpPanel({ onClose }: KeyboardHelpPanelProps) {
             color: 'var(--nord8)',
             fontWeight: 600
           }}>
-            ⌨️ Keyboard Shortcuts
+            ⌨️ {t.keyboardShortcuts}
           </h2>
           <button
             onClick={onClose}
@@ -137,15 +140,17 @@ export function KeyboardHelpPanel({ onClose }: KeyboardHelpPanelProps) {
           color: 'var(--nord4)'
         }}>
           <div style={{ fontWeight: 600, marginBottom: '5px', color: 'var(--nord10)' }}>
-            💡 Tip
+            💡 {t.tip}
           </div>
-          Keyboard shortcuts work when you're not typing in input fields.
-          Press <kbd style={{
+          {t.shortcutsWork}
+          {' '}
+          <kbd style={{
             background: 'var(--nord3)',
             padding: '2px 6px',
             borderRadius: '3px',
             fontFamily: 'monospace'
-          }}>H</kbd> anytime to toggle this panel.
+          }}>H</kbd>{' '}
+          {t.anytime}
         </div>
       </div>
     </div>

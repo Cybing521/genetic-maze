@@ -19,10 +19,13 @@ import { DataExporter, type ExperimentData } from './utils/DataExporter';
 import { MazeDifficulty, type DifficultyMetrics } from './utils/MazeDifficulty';
 import { applyPreset, PARAMETER_PRESETS } from './config/presets';
 import { useKeyboard } from './hooks/useKeyboard';
+import { useTranslation } from './i18n/useTranslation';
+import { LanguageSwitcher } from './ui/LanguageSwitcher';
 import type { GAConfig, GenerationResult, AlgorithmType, SelectionMethod, CrossoverMethod, MutationMethod, IslandConfig } from './types';
 import './App.css';
 
 function App() {
+  const { t, currentLang, changeLanguage } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartCanvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -423,28 +426,32 @@ function App() {
       )}
 
       {/* 键盘帮助面板 */}
-      {showHelp && <KeyboardHelpPanel onClose={() => setShowHelp(false)} />}
+      {showHelp && <KeyboardHelpPanel onClose={() => setShowHelp(false)} t={t} />}
 
       {/* 3D可视化覆盖层 */}
       {show3D && historyData.length > 0 && (
         <FitnessLandscape3D 
           history={historyData} 
           onClose={() => setShow3D(false)}
+          t={t}
         />
       )}
 
       {/* HUD */}
       <div className="hud">
         <div className="hud-left">
-          <h1>Genetic Algorithm Maze Solver</h1>
+          <h1>{t.title}</h1>
+          
+          {/* 语言切换器 */}
+          <LanguageSwitcher currentLang={currentLang} onChange={changeLanguage} />
           {currentGen && (
             <div className="hud-stats">
               <div className="stat">
-                <span className="label">Generation</span>
+                <span className="label">{t.generation}</span>
                 <span className="value highlight">{currentGen.generation}</span>
               </div>
               <div className="stat">
-                <span className="label">Best Fitness</span>
+                <span className="label">{t.bestFitness}</span>
                 <span 
                   className={`value ${currentGen.best.reachedEnd ? 'success' : 'normal'}`}
                   style={{
@@ -455,11 +462,11 @@ function App() {
                   {currentGen.bestFitness.toFixed(0)}
                 </span>
                 {currentGen.best.reachedEnd && (
-                  <div className="fitness-badge">SOLVED!</div>
+                  <div className="fitness-badge">{t.solved}</div>
                 )}
               </div>
               <div className="stat">
-                <span className="label">Avg Fitness</span>
+                <span className="label">{t.avgFitness}</span>
                 <span className="value">{currentGen.avgFitness.toFixed(0)}</span>
                 <div className="progress-bar">
                   <div 
@@ -471,7 +478,7 @@ function App() {
                 </div>
               </div>
               <div className="stat">
-                <span className="label">Diversity</span>
+                <span className="label">{t.diversity}</span>
                 <span 
                   className="value"
                   style={{
@@ -483,10 +490,10 @@ function App() {
                 </span>
               </div>
               <div className="stat">
-                <span className="label">Steps</span>
+                <span className="label">{t.steps}</span>
                 <span className="value">{currentGen.best.path.length}</span>
                 <span className="sub-value">
-                  {currentGen.best.reachedEnd ? 'Optimal' : 'Searching...'}
+                  {currentGen.best.reachedEnd ? t.optimal : t.searching}
                 </span>
               </div>
             </div>
@@ -512,7 +519,7 @@ function App() {
                 fontFamily: 'SF Mono, Monaco, Consolas, monospace',
                 textTransform: 'uppercase'
               }}>
-                DIFFICULTY
+                {t.difficulty}
               </span>
               <span style={{
                 fontSize: '12px',
@@ -531,7 +538,7 @@ function App() {
           )}
 
           <div className="fps-display">
-            <span className="label">FPS</span>
+            <span className="label">{t.fps}</span>
             <span className="value" style={{
               color: fps >= 58 ? '#A3BE8C' : fps >= 50 ? '#EBCB8B' : '#BF616A',
               fontSize: '20px'
@@ -572,7 +579,7 @@ function App() {
 
           {currentGen && (
             <div className={`status ${currentGen.best.reachedEnd ? 'success' : 'running'}`}>
-              {currentGen.best.reachedEnd ? '✓ SUCCESS' : '⚡ EVOLVING'}
+              {currentGen.best.reachedEnd ? `✓ ${t.success}` : `⚡ ${t.evolving}`}
             </div>
           )}
         </div>
@@ -592,16 +599,17 @@ function App() {
 
         {/* 控制面板 */}
         <div className="control-panel">
-          <h3>Algorithm Configuration</h3>
+          <h3>{t.algorithmConfig}</h3>
 
           {/* 参数预设选择器 */}
           <PresetSelector 
             onSelectPreset={handleLoadPreset}
             disabled={isRunning}
+            t={t}
           />
           
           <div className="control-group">
-            <label>Algorithm Type</label>
+            <label>{t.algorithmType}</label>
             <select 
               value={algorithmType} 
               onChange={(e) => setAlgorithmType(e.target.value as AlgorithmType)}
@@ -616,17 +624,17 @@ function App() {
                 fontSize: '13px'
               }}
             >
-              <option value="standard">Standard GA</option>
-              <option value="adaptive">Adaptive GA</option>
-              <option value="hybrid">Hybrid GA ⭐</option>
-              <option value="island">Island GA (Experimental)</option>
+              <option value="standard">{t.standardGA}</option>
+              <option value="adaptive">{t.adaptiveGA}</option>
+              <option value="hybrid">{t.hybridGA} ⭐</option>
+              <option value="island">{t.islandGA}</option>
             </select>
           </div>
 
           {algorithmType === 'hybrid' && (
             <>
               <div className="control-group">
-                <label>Selection Method</label>
+                <label>{t.selectionMethod}</label>
                 <select 
                   value={selectionMethod} 
                   onChange={(e) => setSelectionMethod(e.target.value as SelectionMethod)}
@@ -641,15 +649,15 @@ function App() {
                     fontSize: '13px'
                   }}
                 >
-                  <option value="tournament">Tournament</option>
-                  <option value="roulette">Roulette Wheel</option>
-                  <option value="rank">Rank Selection</option>
-                  <option value="sus">Stochastic Universal Sampling</option>
+                  <option value="tournament">{t.tournament}</option>
+                  <option value="roulette">{t.roulette}</option>
+                  <option value="rank">{t.rank}</option>
+                  <option value="sus">{t.sus}</option>
                 </select>
               </div>
 
               <div className="control-group">
-                <label>Crossover Method</label>
+                <label>{t.crossoverMethod}</label>
                 <select 
                   value={crossoverMethod} 
                   onChange={(e) => setCrossoverMethod(e.target.value as CrossoverMethod)}
@@ -664,16 +672,16 @@ function App() {
                     fontSize: '13px'
                   }}
                 >
-                  <option value="single-point">Single-Point</option>
-                  <option value="two-point">Two-Point</option>
-                  <option value="uniform">Uniform</option>
-                  <option value="order">Order Crossover (OX) ⭐</option>
-                  <option value="pmx">Partially Mapped (PMX)</option>
+                  <option value="single-point">{t.singlePoint}</option>
+                  <option value="two-point">{t.twoPoint}</option>
+                  <option value="uniform">{t.uniform}</option>
+                  <option value="order">{t.orderCrossover} ⭐</option>
+                  <option value="pmx">{t.pmx}</option>
                 </select>
               </div>
 
               <div className="control-group">
-                <label>Mutation Method</label>
+                <label>{t.mutationMethod}</label>
                 <select 
                   value={mutationMethod} 
                   onChange={(e) => setMutationMethod(e.target.value as MutationMethod)}
@@ -688,11 +696,11 @@ function App() {
                     fontSize: '13px'
                   }}
                 >
-                  <option value="random">Random</option>
-                  <option value="guided">Guided (Heuristic) ⭐</option>
-                  <option value="inversion">Inversion</option>
-                  <option value="insertion">Insertion (Loop Removal)</option>
-                  <option value="local-search">Local Search (2-opt)</option>
+                  <option value="random">{t.random}</option>
+                  <option value="guided">{t.guided} ⭐</option>
+                  <option value="inversion">{t.inversion}</option>
+                  <option value="insertion">{t.insertion}</option>
+                  <option value="local-search">{t.localSearch}</option>
                 </select>
               </div>
             </>
@@ -703,13 +711,14 @@ function App() {
               config={islandConfig}
               onChange={setIslandConfig}
               disabled={isRunning}
+              t={t}
             />
           )}
 
-          <h3 style={{ marginTop: '20px' }}>Maze Settings</h3>
+          <h3 style={{ marginTop: '20px' }}>{t.mazeSettings}</h3>
           
           <div className="control-group">
-            <label>Maze Size: {mazeSize}×{mazeSize}</label>
+            <label>{t.mazeSize}: {mazeSize}×{mazeSize}</label>
             <input
               type="range"
               min="15"
@@ -722,7 +731,7 @@ function App() {
           </div>
           
           <div className="control-group">
-            <label>Animation Speed: {animationSpeed}/10</label>
+            <label>{t.animationSpeed}: {animationSpeed}/10</label>
             <input
               type="range"
               min="1"
@@ -743,7 +752,7 @@ function App() {
           </div>
 
           <div className="control-group">
-            <label>Population: {config.populationSize}</label>
+            <label>{t.population}: {config.populationSize}</label>
             <input
               type="range"
               min="50"
@@ -756,7 +765,7 @@ function App() {
           </div>
 
           <div className="control-group">
-            <label>Mutation Rate: {(config.mutationRate * 100).toFixed(0)}%</label>
+            <label>{t.mutationRate}: {(config.mutationRate * 100).toFixed(0)}%</label>
             <input
               type="range"
               min="0.01"
@@ -769,7 +778,7 @@ function App() {
           </div>
 
           <div className="control-group">
-            <label>Crossover Rate: {(config.crossoverRate * 100).toFixed(0)}%</label>
+            <label>{t.crossoverRate}: {(config.crossoverRate * 100).toFixed(0)}%</label>
             <input
               type="range"
               min="0.5"
@@ -782,7 +791,7 @@ function App() {
           </div>
           
           <div className="control-group">
-            <label>Elite Rate: {((config.elitismCount / config.populationSize) * 100).toFixed(0)}%</label>
+            <label>{t.eliteRate}: {((config.elitismCount / config.populationSize) * 100).toFixed(0)}%</label>
             <input
               type="range"
               min="1"
@@ -802,7 +811,7 @@ function App() {
                 onChange={(e) => setShowDetailedProcess(e.target.checked)}
                 disabled={isRunning}
               />
-              Show Exploration Process ⭐
+              {t.showExplorationProcess} ⭐
             </label>
           </div>
           
@@ -814,7 +823,7 @@ function App() {
                 onChange={(e) => setConfig({...config, useAdaptive: e.target.checked})}
                 disabled={isRunning}
               />
-              Adaptive Parameters
+              {t.adaptiveParameters}
             </label>
           </div>
 
@@ -824,7 +833,7 @@ function App() {
               disabled={isRunning}
               className="btn-primary"
             >
-              {isRunning ? 'Running...' : 'Start'}
+              {isRunning ? t.running : t.start}
             </button>
             
             <button
@@ -836,14 +845,14 @@ function App() {
                 cursor: !isRunning ? 'not-allowed' : 'pointer'
               }}
             >
-              {isPaused ? '▶ Resume' : '⏸ Pause'}
+              {isPaused ? `▶ ${t.resume}` : `⏸ ${t.pause}`}
             </button>
             
             <button
               onClick={handleReset}
               className="btn-secondary"
             >
-              Reset
+              {t.reset}
             </button>
           </div>
 
@@ -854,19 +863,19 @@ function App() {
                 className="btn-record"
                 disabled={!isRunning}
               >
-                🔴 Record
+                🔴 {t.record}
               </button>
             ) : (
               <button
                 onClick={handleStopRecording}
                 className="btn-record recording"
               >
-                ⏹️ Stop & Save
+                ⏹️ {t.stopSave}
               </button>
             )}
           </div>
 
-          <h3 style={{ marginTop: '20px' }}>Visualization & Export</h3>
+          <h3 style={{ marginTop: '20px' }}>{t.visualizationExport}</h3>
 
           <div className="button-group">
             <button
@@ -878,14 +887,14 @@ function App() {
                 cursor: historyData.length < 2 ? 'not-allowed' : 'pointer'
               }}
             >
-              🌐 3D Landscape
+              🌐 {t.landscape3D}
             </button>
             
             <button
               onClick={() => setShowStats(!showStats)}
               className="btn-secondary"
             >
-              {showStats ? '📊 Hide Stats' : '📊 Show Stats'}
+              {showStats ? `📊 ${t.hideStats}` : `📊 ${t.showStats}`}
             </button>
           </div>
 
@@ -896,7 +905,7 @@ function App() {
               className="btn-secondary"
               style={{ fontSize: '13px' }}
             >
-              📥 Export JSON
+              📥 {t.exportJSON}
             </button>
             
             <button
@@ -905,7 +914,7 @@ function App() {
               className="btn-secondary"
               style={{ fontSize: '13px' }}
             >
-              📊 Export CSV
+              📊 {t.exportCSV}
             </button>
           </div>
 
@@ -916,7 +925,7 @@ function App() {
               className="btn-secondary"
               style={{ fontSize: '13px' }}
             >
-              📄 Export Report
+              📄 {t.exportReport}
             </button>
             
             <button
@@ -925,42 +934,42 @@ function App() {
               className="btn-secondary"
               style={{ fontSize: '13px' }}
             >
-              🛤️ Export Path
+              🛤️ {t.exportPath}
             </button>
           </div>
 
           <div className="info-panel">
-            <h4>Algorithm Info</h4>
-            <p>Type: {algorithmType.charAt(0).toUpperCase() + algorithmType.slice(1)} GA</p>
+            <h4>{t.algorithmInfo}</h4>
+            <p>{t.type}: {algorithmType.charAt(0).toUpperCase() + algorithmType.slice(1)} GA</p>
             {algorithmType === 'hybrid' && (
               <>
-                <p>Selection: {selectionMethod}</p>
-                <p>Crossover: {crossoverMethod}</p>
-                <p>Mutation: {mutationMethod}</p>
-                <p>A* Init: 15%</p>
+                <p>{t.selection}: {selectionMethod}</p>
+                <p>{t.crossover}: {crossoverMethod}</p>
+                <p>{t.mutation}: {mutationMethod}</p>
+                <p>{t.astarInit}: 15%</p>
               </>
             )}
             {algorithmType === 'island' && (
               <>
-                <p>Islands: {islandConfig.numIslands}</p>
-                <p>Migration: Every {islandConfig.migrationInterval} gen</p>
-                <p>Topology: {islandConfig.migrationTopology}</p>
-                <p>Pop/Island: ~{Math.floor(config.populationSize / islandConfig.numIslands)}</p>
+                <p>{t.islands}: {islandConfig.numIslands}</p>
+                <p>{t.migrationEvery} {islandConfig.migrationInterval} {t.generations}</p>
+                <p>{t.migrationTopology}: {islandConfig.migrationTopology}</p>
+                <p>{t.popPerIsland}: ~{Math.floor(config.populationSize / islandConfig.numIslands)}</p>
               </>
             )}
-            <p>Population: {config.populationSize} individuals</p>
-            <p>Elitism: {config.elitismCount} ({((config.elitismCount/config.populationSize)*100).toFixed(1)}%)</p>
-            <p>Max Steps: {config.maxSteps}</p>
-            <p>Max Generations: {config.maxGenerations}</p>
+            <p>{t.population}: {config.populationSize} {t.individuals}</p>
+            <p>{t.elitism}: {config.elitismCount} ({((config.elitismCount/config.populationSize)*100).toFixed(1)}%)</p>
+            <p>{t.maxSteps}: {config.maxSteps}</p>
+            <p>{t.maxGenerations}: {config.maxGenerations}</p>
           </div>
 
           {/* Island GA状态可视化 */}
           {algorithmType === 'island' && islandResults.length > 0 && (
-            <IslandVisualizer islands={islandResults} />
+            <IslandVisualizer islands={islandResults} t={t} />
           )}
           
           <div className="control-group">
-            <label>Max Generations: {config.maxGenerations}</label>
+            <label>{t.maxGenerations}: {config.maxGenerations}</label>
             <input
               type="range"
               min="5"
@@ -978,6 +987,7 @@ function App() {
               history={historyData}
               startTime={startTimeRef}
               isRunning={isRunning}
+              t={t}
             />
           )}
         </div>

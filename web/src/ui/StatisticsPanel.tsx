@@ -3,14 +3,16 @@ import { useEffect, useState } from 'react';
 import type { GenerationResult } from '../types';
 import type { ExperimentStatistics } from '../utils/DataExporter';
 import { DataExporter } from '../utils/DataExporter';
+import type { Translations } from '../i18n/translations';
 
 interface StatisticsPanelProps {
   history: GenerationResult[];
   startTime: number;
   isRunning: boolean;
+  t: Translations;
 }
 
-export function StatisticsPanel({ history, startTime, isRunning }: StatisticsPanelProps) {
+export function StatisticsPanel({ history, startTime, isRunning, t }: StatisticsPanelProps) {
   const [stats, setStats] = useState<ExperimentStatistics | null>(null);
 
   useEffect(() => {
@@ -37,9 +39,9 @@ export function StatisticsPanel({ history, startTime, isRunning }: StatisticsPan
         borderRadius: '8px',
         marginTop: '20px'
       }}>
-        <h4 style={{ marginBottom: '15px', color: 'var(--nord8)' }}>Statistics</h4>
+        <h4 style={{ marginBottom: '15px', color: 'var(--nord8)' }}>{t.statistics}</h4>
         <p style={{ color: 'var(--nord4)', fontSize: '13px' }}>
-          Run the algorithm to see statistics...
+          {t.runAlgorithm}
         </p>
       </div>
     );
@@ -57,7 +59,7 @@ export function StatisticsPanel({ history, startTime, isRunning }: StatisticsPan
       overflowY: 'auto'
     }}>
       <h4 style={{ marginBottom: '15px', color: 'var(--nord8)', fontSize: '16px' }}>
-        📊 Real-time Statistics
+        📊 {t.statistics}
       </h4>
 
       {/* 收敛性能 */}
@@ -68,20 +70,20 @@ export function StatisticsPanel({ history, startTime, isRunning }: StatisticsPan
           fontWeight: 600,
           marginBottom: '8px'
         }}>
-          CONVERGENCE
+          {t.convergence}
         </div>
         <StatRow 
-          label="First Solution" 
-          value={stats.convergenceGeneration < history.length ? `Gen ${stats.convergenceGeneration}` : 'Not found'}
+          label={t.firstSolution} 
+          value={stats.convergenceGeneration < history.length ? `${t.generation} ${stats.convergenceGeneration}` : t.notFound}
           good={stats.convergenceGeneration < history.length}
         />
         <StatRow 
-          label="90% Optimal" 
-          value={`Gen ${stats.convergenceSpeed}`}
+          label={t.optimalReached} 
+          value={`${t.generation} ${stats.convergenceSpeed}`}
           good={stats.convergenceSpeed < history.length * 0.5}
         />
         <StatRow 
-          label="Avg Improvement" 
+          label={t.avgImprovement} 
           value={`+${stats.avgFitnessImprovement.toFixed(2)}/gen`}
         />
       </div>
@@ -94,19 +96,19 @@ export function StatisticsPanel({ history, startTime, isRunning }: StatisticsPan
           fontWeight: 600,
           marginBottom: '8px'
         }}>
-          PERFORMANCE
+          {t.performance}
         </div>
         <StatRow 
-          label="Total Time" 
+          label={t.totalTime} 
           value={`${(stats.totalTime / 1000).toFixed(2)}s`}
         />
         <StatRow 
-          label="Speed" 
+          label={t.speed} 
           value={`${stats.iterationsPerSecond.toFixed(1)} iter/s`}
           good={stats.iterationsPerSecond > 5}
         />
         <StatRow 
-          label="Avg Gen Time" 
+          label={t.avgGenTime} 
           value={`${stats.avgGenerationTime.toFixed(0)}ms`}
         />
       </div>
@@ -119,25 +121,25 @@ export function StatisticsPanel({ history, startTime, isRunning }: StatisticsPan
           fontWeight: 600,
           marginBottom: '8px'
         }}>
-          SOLUTION QUALITY
+          {t.solutionQuality}
         </div>
         <StatRow 
-          label="Path Length" 
-          value={`${stats.finalPathLength} steps`}
+          label={t.pathLength} 
+          value={`${stats.finalPathLength} ${t.steps}`}
         />
         <StatRow 
-          label="Uniqueness" 
+          label={t.uniqueness} 
           value={`${(stats.pathUniqueness * 100).toFixed(1)}%`}
           good={stats.pathUniqueness > 0.9}
         />
         <StatRow 
-          label="Smoothness" 
+          label={t.smoothness} 
           value={`${(100 - stats.pathSmoothness * 100).toFixed(1)}%`}
           good={stats.pathSmoothness < 0.3}
         />
         <StatRow 
-          label="Status" 
-          value={currentGen.best.reachedEnd ? '✅ Solved' : '⏳ Searching'}
+          label={t.status} 
+          value={currentGen.best.reachedEnd ? `✅ ${t.solved.replace('!', '')}` : `⏳ ${t.searching}`}
           good={currentGen.best.reachedEnd}
         />
       </div>
@@ -150,23 +152,23 @@ export function StatisticsPanel({ history, startTime, isRunning }: StatisticsPan
           fontWeight: 600,
           marginBottom: '8px'
         }}>
-          DIVERSITY
+          {t.diversity.toUpperCase()}
         </div>
         <StatRow 
-          label="Average" 
+          label={t.average} 
           value={stats.avgDiversity.toFixed(2)}
         />
         <StatRow 
-          label="Trend" 
+          label={t.trend} 
           value={
-            stats.diversityTrend === 'increasing' ? '📈 Increasing' :
-            stats.diversityTrend === 'decreasing' ? '📉 Decreasing' :
-            '➡️ Stable'
+            stats.diversityTrend === 'increasing' ? `📈 ${t.increasing}` :
+            stats.diversityTrend === 'decreasing' ? `📉 ${t.decreasing}` :
+            `➡️ ${t.stable}`
           }
           good={stats.diversityTrend !== 'decreasing' || stats.convergenceGeneration < history.length}
         />
         <StatRow 
-          label="Variance" 
+          label={t.variance} 
           value={stats.fitnessVariance.toFixed(2)}
         />
       </div>
@@ -179,22 +181,22 @@ export function StatisticsPanel({ history, startTime, isRunning }: StatisticsPan
           fontWeight: 600,
           marginBottom: '8px'
         }}>
-          CURRENT STATUS
+          {t.currentStatus}
         </div>
         <StatRow 
-          label="Generation" 
+          label={t.generation} 
           value={`${currentGen.generation} / ${currentGen.generation}`}
         />
         <StatRow 
-          label="Best Fitness" 
+          label={t.bestFitness} 
           value={currentGen.bestFitness.toFixed(0)}
         />
         <StatRow 
-          label="Population Avg" 
+          label={t.avgFitness} 
           value={currentGen.avgFitness.toFixed(0)}
         />
         <StatRow 
-          label="Current Diversity" 
+          label={t.diversity} 
           value={currentGen.diversity.toFixed(2)}
         />
       </div>
@@ -214,7 +216,7 @@ export function StatisticsPanel({ history, startTime, isRunning }: StatisticsPan
             fontWeight: 600,
             marginBottom: '5px'
           }}>
-            💡 RECOMMENDATIONS
+            💡 {t.recommendations}
           </div>
           {generateRecommendations(stats, currentGen).map((rec, idx) => (
             <div key={idx} style={{ 
