@@ -125,13 +125,14 @@ export class DataExporter {
   static exportJSON(data: ExperimentData): void {
     const json = JSON.stringify(data, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
-    this.downloadBlob(blob, `maze-ga-experiment-${Date.now()}.json`);
+    const filename = this.generateFilename(data.algorithmType, data.mazeSize, data.totalGenerations, 'json');
+    this.downloadBlob(blob, filename);
   }
 
   /**
    * 导出为CSV（适应度历史）
    */
-  static exportCSV(history: GenerationResult[]): void {
+  static exportCSV(history: GenerationResult[], algorithmType?: string, mazeSize?: number): void {
     const headers = ['Generation', 'BestFitness', 'AvgFitness', 'Diversity', 'PathLength', 'ReachedEnd'];
     const rows = history.map(gen => [
       gen.generation,
@@ -148,7 +149,10 @@ export class DataExporter {
     ].join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });
-    this.downloadBlob(blob, `maze-ga-fitness-${Date.now()}.csv`);
+    const filename = algorithmType && mazeSize 
+      ? this.generateFilename(algorithmType, mazeSize, history.length, 'csv')
+      : `maze-ga-fitness-${Date.now()}.csv`;
+    this.downloadBlob(blob, filename);
   }
 
   /**
@@ -217,13 +221,14 @@ ${this.generateConclusion(statistics)}
 `;
 
     const blob = new Blob([report], { type: 'text/markdown' });
-    this.downloadBlob(blob, `maze-ga-report-${Date.now()}.md`);
+    const filename = this.generateFilename(data.algorithmType, data.mazeSize, data.totalGenerations, 'md');
+    this.downloadBlob(blob, filename);
   }
 
   /**
    * 导出最佳路径（JSON）
    */
-  static exportBestPath(path: any[], generation: number): void {
+  static exportBestPath(path: any[], generation: number, algorithmType?: string, mazeSize?: number): void {
     const data = {
       generation,
       pathLength: path.length,
@@ -234,7 +239,24 @@ ${this.generateConclusion(statistics)}
 
     const json = JSON.stringify(data, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
-    this.downloadBlob(blob, `best-path-gen${generation}-${Date.now()}.json`);
+    const filename = algorithmType && mazeSize
+      ? `${algorithmType}-${mazeSize}x${mazeSize}-path-gen${generation}.json`
+      : `best-path-gen${generation}-${Date.now()}.json`;
+    this.downloadBlob(blob, filename);
+  }
+
+  /**
+   * 生成优化的文件名
+   */
+  private static generateFilename(
+    algorithmType: string,
+    mazeSize: number,
+    generations: number,
+    extension: string
+  ): string {
+    const date = new Date();
+    const timestamp = date.toISOString().slice(0, 16).replace('T', '-').replace(/:/g, '-');
+    return `${algorithmType}-${mazeSize}x${mazeSize}-gen${generations}-${timestamp}.${extension}`;
   }
 
   /**

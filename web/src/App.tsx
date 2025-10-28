@@ -11,9 +11,14 @@ import { FitnessLandscape3D } from './vis/FitnessLandscape3D';
 import { StatisticsPanel } from './ui/StatisticsPanel';
 import { IslandControlPanel } from './ui/IslandControlPanel';
 import { IslandVisualizer } from './ui/IslandVisualizer';
+import { KeyboardHelpPanel } from './ui/KeyboardHelpPanel';
+import { PresetSelector } from './ui/PresetSelector';
 import { IslandGA, createDefaultIslandConfig } from './ga/IslandGA';
 import { WebMRecorder } from './utils/recorder';
 import { DataExporter, type ExperimentData } from './utils/DataExporter';
+import { MazeDifficulty, type DifficultyMetrics } from './utils/MazeDifficulty';
+import { applyPreset, PARAMETER_PRESETS } from './config/presets';
+import { useKeyboard } from './hooks/useKeyboard';
 import type { GAConfig, GenerationResult, AlgorithmType, SelectionMethod, CrossoverMethod, MutationMethod, IslandConfig } from './types';
 import './App.css';
 
@@ -58,6 +63,13 @@ function App() {
   const [islandConfig, setIslandConfig] = useState<IslandConfig>(createDefaultIslandConfig());
   const [islandResults, setIslandResults] = useState<GenerationResult[]>([]);
   const [islandGA, setIslandGA] = useState<IslandGA | null>(null);
+
+  // 快捷键和帮助
+  const [showHelp, setShowHelp] = useState(false);
+  const [showToast, setShowToast] = useState<string>('');
+
+  // 迷宫难度
+  const [mazeDifficulty, setMazeDifficulty] = useState<DifficultyMetrics | null>(null);
 
   const mazeRef = useRef<Maze | null>(null);
   const animManagerRef = useRef<AnimationManager | null>(null);
@@ -114,6 +126,10 @@ function App() {
     renderer.clear();
     renderer.renderMaze();
     renderer.renderStartEnd(maze);
+
+    // 评估迷宫难度
+    const difficulty = MazeDifficulty.evaluate(maze);
+    setMazeDifficulty(difficulty);
     
     // 清理函数
     return () => {
@@ -243,6 +259,10 @@ function App() {
       renderer.clear();
       renderer.renderMaze();
       renderer.renderStartEnd(maze);
+
+      // 评估迷宫难度
+      const difficulty = MazeDifficulty.evaluate(maze);
+      setMazeDifficulty(difficulty);
       
       // 更新动画管理器的renderer
       const animManager = new AnimationManager(
@@ -287,11 +307,34 @@ function App() {
     };
 
     DataExporter.exportJSON(experimentData);
+    showToastMessage('📥 JSON exported successfully!');
+  };
+
+  const handleLoadPreset = (presetName: string) => {
+    const newConfig = applyPreset(config, presetName);
+    setConfig(newConfig);
+    showToastMessage(`${PARAMETER_PRESETS[presetName].icon} Loaded preset: ${PARAMETER_PRESETS[presetName].displayName}`);
+  };
+
+  const showToastMessage = (message: string) => {
+    setShowToast(message);
+    setTimeout(() => setShowToast(''), 3000);
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      showToastMessage('🖥️ Fullscreen mode');
+    } else {
+      document.exitFullscreen();
+      showToastMessage('🪟 Exited fullscreen');
+    }
   };
 
   const handleExportCSV = () => {
     if (historyData.length === 0) return;
-    DataExporter.exportCSV(historyData);
+    DataExporter.exportCSV(historyData, algorithmType, mazeSize);
+    showToastMessage('📊 CSV exported successfully!');
   };
 
   const handleExportReport = () => {
@@ -310,15 +353,78 @@ function App() {
     };
 
     DataExporter.exportMarkdownReport(experimentData);
+    showToastMessage('📄 Report exported successfully!');
   };
 
   const handleExportPath = () => {
     if (!currentGen) return;
-    DataExporter.exportBestPath(currentGen.best.path, currentGen.generation);
+    DataExporter.exportBestPath(currentGen.best.path, currentGen.generation, algorithmType, mazeSize);
+    showToastMessage('🛤️ Path exported successfully!');
   };
+
+  // 键盘快捷键
+  useKeyboard({
+    onSpacePress: () => {
+      if (isRunning) {
+        handlePause();
+      } else {
+        handleStart();
+      }
+    },
+    onReset: () => {
+      if (!isRunning) {
+        handleReset();
+        showToastMessage('🔄 Reset');
+      }
+    },
+    onExport: () => {
+      if (!isRunning && historyData.length > 0) {
+        handleExportJSON();
+      }
+    },
+    onHelp: () => {
+      setShowHelp(!showHelp);
+    },
+    onFullscreen: toggleFullscreen,
+    onEscape: () => {
+      if (show3D) setShow3D(false);
+      else if (showHelp) setShowHelp(false);
+    },
+    onSpeed: (speed) => {
+      setAnimationSpeed(speed);
+      if (animManagerRef.current) {
+        animManagerRef.current.frameDelay = 1100 - speed * 100;
+        animManagerRef.current.transitionDuration = 1100 - speed * 100;
+      }
+      showToastMessage(`⚡ Speed: ${speed}/10`);
+    }
+  }, !isRunning || isPaused); // 运行时某些快捷键仍可用
 
   return (
     <div className="app">
+      {/* Toast通知 */}
+      {showToast && (
+        <div style={{
+          position: 'fixed',
+          top: '80px',
+          right: '20px',
+          background: 'rgba(136, 192, 208, 0.95)',
+          color: 'var(--nord0)',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: 600,
+          zIndex: 3000,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+          animation: 'slideIn 0.3s ease'
+        }}>
+          {showToast}
+        </div>
+      )}
+
+      {/* 键盘帮助面板 */}
+      {showHelp && <KeyboardHelpPanel onClose={() => setShowHelp(false)} />}
+
       {/* 3D可视化覆盖层 */}
       {show3D && historyData.length > 0 && (
         <FitnessLandscape3D 
@@ -387,6 +493,43 @@ function App() {
           )}
         </div>
         <div className="hud-right">
+          {/* 迷宫难度显示 */}
+          {mazeDifficulty && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+              padding: '4px 12px',
+              background: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: '4px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              marginRight: '10px'
+            }}>
+              <span style={{
+                fontSize: '9px',
+                color: 'rgba(255, 255, 255, 0.5)',
+                fontFamily: 'SF Mono, Monaco, Consolas, monospace',
+                textTransform: 'uppercase'
+              }}>
+                DIFFICULTY
+              </span>
+              <span style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: MazeDifficulty.getLevelDisplay(mazeDifficulty.level).color
+              }}>
+                {MazeDifficulty.renderStars(mazeDifficulty.stars)}
+              </span>
+              <span style={{
+                fontSize: '10px',
+                color: MazeDifficulty.getLevelDisplay(mazeDifficulty.level).color
+              }}>
+                {MazeDifficulty.getLevelDisplay(mazeDifficulty.level).label}
+              </span>
+            </div>
+          )}
+
           <div className="fps-display">
             <span className="label">FPS</span>
             <span className="value" style={{
@@ -396,6 +539,37 @@ function App() {
               {fps}
             </span>
           </div>
+          
+          {/* 帮助按钮 */}
+          <button
+            onClick={() => setShowHelp(true)}
+            title="Keyboard shortcuts (H)"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '50%',
+              width: '32px',
+              height: '32px',
+              color: 'var(--nord8)',
+              fontSize: '16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(136, 192, 208, 0.2)';
+              e.currentTarget.style.borderColor = 'var(--nord8)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            }}
+          >
+            ?
+          </button>
+
           {currentGen && (
             <div className={`status ${currentGen.best.reachedEnd ? 'success' : 'running'}`}>
               {currentGen.best.reachedEnd ? '✓ SUCCESS' : '⚡ EVOLVING'}
@@ -419,6 +593,12 @@ function App() {
         {/* 控制面板 */}
         <div className="control-panel">
           <h3>Algorithm Configuration</h3>
+
+          {/* 参数预设选择器 */}
+          <PresetSelector 
+            onSelectPreset={handleLoadPreset}
+            disabled={isRunning}
+          />
           
           <div className="control-group">
             <label>Algorithm Type</label>
